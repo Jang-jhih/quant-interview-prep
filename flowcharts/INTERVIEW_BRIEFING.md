@@ -12,7 +12,7 @@
 
 ---
 
-## 一、GA 演化選股策略（ga_yoy_v1）
+## 一、範例：股票池篩選研究（example_universe_selection）
 
 ### 30 秒電梯簡報
 

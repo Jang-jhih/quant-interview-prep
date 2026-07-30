@@ -19,7 +19,7 @@
 
 | # | 流程圖文件 | 主題 | 子專案根目錄 |
 |---|---|---|---|
-| 1 | [`ga_yoy_v1.md`](./ga_yoy_v1.md) | GA 演化 + YoY 加權選股策略 | `Finlab_/jupyter/strategy/GA/deap/`（Plutus 之外）|
+| 1 | [`example_universe_selection.md`](./example_universe_selection.md) | GA 演化 + YoY 加權選股策略 | `Finlab_/jupyter/strategy/GA/deap/`（Plutus 之外）|
 | 2 | [`evolution_lab.md`](./evolution_lab.md) | LLM 驅動因子自動演化實驗室 | `evolution-lab/` |
 | 3 | [`datawarehouse.md`](./datawarehouse.md) | 多源金融資料倉儲系統 | `datawarehouse/` |
 | 4 | [`services.md`](./services.md) | 統一 AI 服務編排層 | `services/{hermes,n8n,data-api}` + `plutus_ui/` |
@@ -27,7 +27,7 @@
 
 ---
 
-## 1. `ga_yoy_v1.md` — GA 演化 + YoY 加權選股策略
+## 1. `example_universe_selection.md` — 範例：GA 演化 + YoY 加權選股策略
 
 > 以 DEAP 遺傳演算法搜尋台股複合條件選股策略，YoY 營收加權持倉，IS/OOS 驗證 + PBO 過擬合懲罰。
 
