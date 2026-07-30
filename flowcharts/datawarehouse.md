@@ -23,7 +23,7 @@
 | **yfinance** | 美股股價 + 深度基本面 | 53 API |
 | **Binance** | 加密貨幣 OHLCV（前 10 大幣） | 2,400 weight/min（獨立配額） |
 | **Macro 群組** | FRED / EIA 總經與原油、CFTC 期貨持倉、**US Congress 議員交易**、**CNN Fear & Greed**、crypto F&G、黃金、公債殖利率 | Public |
-| **KRX（韓股）** | Pykrx + FinanceDataReader + Naver Finance 三源組合 | 見 §四.1 |
+| **KRX（韓股）** | Pykrx + FinanceDataReader + Naver Finance 三源組合 | 見 §五 |
 | **J-Quants** | 日股（**已暫停**） | Registry 保留、無 worker |
 
 > **口徑說明**：`SOURCE_CONFIG`（`bulk_downloader/constants.py`）以「**進程隔離單位**」分 6 組
@@ -31,7 +31,6 @@
 > 都掛在 `macro` 群組下共用一個限速器。所以「幾種資料源」取決於怎麼數——
 > **被追問時答「6 個獨立限速群組、8 個對外資料供應方」**，不要含糊。
 
-> 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第六節**。
 
 > 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
 
@@ -235,7 +234,6 @@ flowchart TD
 | **配額安全鐵律** | 見下方——**慢補是常態，不是要修的效能問題** |
 
 
-
 ---
 
 ## 三、SmartLoader 查詢路徑（下游怎麼讀資料）
@@ -384,7 +382,7 @@ flowchart TD
 
 ---
 
-## 四.1、韓股 KRX：用三個開源套件組出一個資料源
+## 五、韓股 KRX：三源組合
 
 > **這題被問到時的定位要先講清楚**：不是「破解付費牆」，而是「**KRX 官方 Open API 不提供的欄位，
 > 用三個各自合法的公開來源拼出量化需要的覆蓋**」。
@@ -397,20 +395,16 @@ KRX（韓國交易所）的完整資料要會員資格，但量化研究需要�
 | **Naver Finance** | 籌碼面（外資買賣超、外資持股比） | 公開網頁資料，HTML 解析 |
 | **pykrx** | 衍生品 28 類別 metadata | KRX Open API 不含衍生品 OHLCV，只能取 metadata |
 
-實作落點（`bulk_downloader/registry.py` 的 `_PHASE12_KRX_APIS`，4 支 API）：
-
-| API | 內容 | 寫入策略 |
-|---|---|---|
-| `krx_universe` | 韓股全市場清單（KOSPI / KOSDAQ / KONEX） | `replace` |
-| `krx_investor_trend` | 投資人買賣超 | append |
-| `krx_foreign_ownership` | 外資持股比 | append |
-| `krx_future_universe` | 衍生品 28 類別 metadata | replace |
-
-決策紀錄：`datawarehouse/docs/decisions/ADR-013-韓股資料源-Pykrx-整合.md`。
-排程器測試：`tests/test_scheduler_krx_no_param.py`。
+實際串了 4 支 API：韓股全市場清單（KOSPI / KOSDAQ / KONEX）、投資人買賣超、
+外資持股比、衍生品 28 類別 metadata。前兩者每日增量、後兩者整批覆蓋。
 
 > **講法建議**（briefing 也有列為地雷）：強調「用開源 cache 套件 + 公開網頁資料」，
 > 不要把「繞過會員牆」講成功勞。被問合規就答：**都是公開端點，沒有帳號共用、沒有反爬對抗，
 > 且限速壓到 2 workers / 1800 req-hr 比對方的軟限流更保守。**
 
 ---
+
+---
+
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# check_facts.sh — 驗證 flowcharts/_FACTS.md 的數字是否仍與 Plutus 原始碼一致，
-#                  並靜態檢查所有 Mermaid 區塊的 class / ::: 引用。
+# check_facts.sh — 驗證文件裡的數字是否仍與 Plutus 原始碼一致，
+#                  並檢查 Mermaid 語法、相對連結、過期用語與 repo 衛生。
 #
 # 用法：
 #   ./scripts/check_facts.sh                 # 全部檢查（靜態）
@@ -34,7 +34,7 @@ expect() {
   if [ "$want" = "$got" ]; then
     ok "$desc = $got"
   else
-    bad "$desc：_FACTS.md 說 $want，實查是 ${got:-<空>}"
+    bad "$desc：文件寫 $want，實查是 ${got:-<空>}"
   fi
 }
 
@@ -168,7 +168,7 @@ stale_check() { # <描述> <pattern> [排除檔案的 grep -v pattern]
   local desc="$1" pat="$2"
   local hits
   hits=$(grep -rnE "$pat" "$REPO"/README.md "$REPO"/flowcharts "$REPO"/backtest_reports/README.md 2>/dev/null \
-         | grep -vE '_FACTS\.md|_INTERVIEW_BRIEFING\.md|SOURCE_MANIFEST\.md' || true)
+         | grep -vE '_INTERVIEW_BRIEFING\.md' || true)
   if [ -z "$hits" ]; then
     ok "$desc"
   else
@@ -205,9 +205,9 @@ else
     grep_has "Hermes 維運 profile = glm-5.2"     "$PLUTUS/services/hermes/README.md"   'glm-5\.2'
     grep_has "plutus_ui 前端 = Next.js"          "$PLUTUS/plutus_ui/web/package.json"  '"next":'
     if grep -qE 'include_router\(\s*etf_bh_metrics' "$PLUTUS/services/data-api/app/main.py" 2>/dev/null; then
-      bad "etf_bh_metrics 已被註冊 → _FACTS.md 與 services.md §四 需更新"
+      bad "etf_bh_metrics 已被註冊 → services.md §四 需更新"
     else
-      ok "etf_bh_metrics 仍未註冊（與 _FACTS.md 一致）"
+      ok "etf_bh_metrics 仍未註冊（與文件一致）"
     fi
 
     head_ "▸ datawarehouse 事實比對"
@@ -247,7 +247,7 @@ print(len(re.findall(r'^\s{4}\"([a-z_]+)\":\s*\{', m.group(1), re.M)) if m else 
     if [ -d "$FINLAB/jupyter/strategy/pakage/GA_v3" ]; then
       ok "GA_v3 引擎存在於 Finlab_/jupyter/strategy/pakage/GA_v3"
     else
-      bad "找不到 GA_v3 引擎（_FACTS.md 說在 Finlab_/jupyter/strategy/pakage/GA_v3）"
+      bad "找不到 GA 引擎 package（Finlab_/jupyter/strategy/pakage/GA_v3）"
     fi
     expect "ga_yoy_v1.ipynb cell 數" 3 \
       "$(python3 -c "

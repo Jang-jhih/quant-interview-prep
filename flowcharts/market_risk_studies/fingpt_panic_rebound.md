@@ -57,11 +57,11 @@ flowchart LR
     DD["market_drawdown<br/>技術超跌程度"]:::source
 
     SIG["訊號組合<br/>indicators.py<br/>H1 / H2 / H3 / combo"]:::signal
-    MFE["compute_mfe_labels<br/>label.py:64<br/>未來 h 日最大漲幅"]:::label
-    ELIG["get_eligible_observations<br/>label.py:101<br/>尾端 h 日排除"]:::label
+    MFE["compute_mfe_labels<br/>未來 h 日最大漲幅"]:::label
+    ELIG["get_eligible_observations<br/>尾端 h 日排除"]:::label
 
-    LIFT["compute_lift_metrics<br/>evaluation.py:18<br/>prob_lift + mag_lift"]:::eval
-    DEC["make_keep_discard_decision<br/>evaluation.py:157<br/>雙指標須同向"]:::eval
+    LIFT["compute_lift_metrics<br/>prob_lift + mag_lift"]:::eval
+    DEC["make_keep_discard_decision<br/>雙指標須同向"]:::eval
 
     OUT["H3 → IS + OOS 雙 KEEP<br/>+ 4 WF + 4 crisis"]:::keep
 
@@ -90,9 +90,9 @@ flowchart TB
 
     subgraph H["三條事件假設（indicators.py）"]
         direction TB
-        H1["H1 · 恐慌極值 (:20)<br/>panic_index_rank > 門檻<br/>單條件"]:::hyp
-        H2["H2 · 恐慌降溫 (:33)<br/>panic 由高位回落<br/>轉折型"]:::hyp
-        H3["H3 · 恐慌 + 技術超跌 (:54)<br/>panic > 0.85<br/>AND dd < -0.05"]:::hyp
+        H1["H1 · 恐慌極值<br/>panic_index_rank > 門檻<br/>單條件"]:::hyp
+        H2["H2 · 恐慌降溫<br/>panic 由高位回落<br/>轉折型"]:::hyp
+        H3["H3 · 恐慌 + 技術超跌<br/>panic > 0.85<br/>AND dd < -0.05"]:::hyp
     end
 
     R1["3/25 雙 KEEP<br/>僅極端閾值 0.93-0.96 才成立<br/>→ 需 dd 條件配合"]:::partial
@@ -147,7 +147,7 @@ flowchart LR
 
 ---
 
-## 五、穩健性證據（這節是本議題的核心價值）
+## 五、穩健性證據
 
 ### 5.1 主結果
 
@@ -186,7 +186,7 @@ H3 的 **25 個參數變體全部 IS+OOS 雙 KEEP**：`panic_th ∈ [0.65, 0.90]
 
 ---
 
-## 六、Paper Trading 驗證（以及它的限制）
+## 六、Paper Trading 驗證與限制
 
 `scripts/paper_trading/simulator.py` 做了 canonical H3 的紙上交易模擬（**10 筆 OOS trades**）：
 
@@ -254,40 +254,9 @@ flowchart LR
 
 ---
 
-## 八、地雷與講法
-
-- **不要說「這個訊號能賺錢」**——目前只到 paper trading，**未扣成本、未接 vectorbt 對帳**
-- **不要漏講「不含手續費/稅/滑價」**——這是 simulator 自己標的限制，主動說是誠實，被抓到是扣分
-- **不要把 OOS n=13 講得太滿**——2 年只有 13 次訊號，樣本不大；
-  真正的說服力來自 **IS 69 + 4 段 WF + 4 次危機 + 25 個參數變體**的**一致性**，不是單一數字
-- **被問「2015 China 為什麼不算」**：樣本不足，**不宣稱**。這跟 H2 的 OOS 全滅一樣，是照規則判的
-- **被問「為什麼 Hold-out 不打開看看」**：因為打開就沒有 hold-out 了。
-  2025+ 保留是為了未來還有一次乾淨的考試機會
-- **被問「這跟 fingpt_risk 的 PIVOT 矛盾嗎」**：不矛盾，見 §七——不同 Pack 問不同問題。
-  而且正是因為修正了 fingpt_risk 的錯誤前提（誤把啟動門檻當物理上限），本議題才拿得到全歷史資料
+> 口語說明、預期追問與地雷題見 [`_INTERVIEW_BRIEFING.md`](../_INTERVIEW_BRIEFING.md) 第四章。
 
 ---
 
-## 九、程式碼索引（面試時可快速跳轉）
-
-| 角色 | 路徑（host 視角） |
-|---|---|
-| 🎯 模組入口 README | `Plutus/market-risk/analyses/bottom_dip/fingpt_panic_rebound/README.md` |
-| 🎯 軸契約 + 區間切分 | `.../fingpt_panic_rebound/AGENTS.md` |
-| 🔍 三條假設訊號定義 | `.../scripts/indicators.py`（H1 `:20`、H2 `:33`、H3 `:54`、combo `:71`）|
-| 🔍 MFE label 計算 | `.../scripts/label.py`（`compute_mfe:42`、`compute_mfe_labels:64`、`get_eligible_observations:101`）|
-| 🔍 雙指標評估 + 判定 | `.../scripts/evaluation.py`（`compute_lift_metrics:18`、`evaluate_signal:94`、`make_keep_discard_decision:157`）|
-| 🔍 單次 iteration | `.../scripts/run_is_iteration.py` |
-| 🔍 100 iterations 批次 | `.../scripts/run_batch_iterations.py` |
-| 🔍 全歷史 panic rank 重算 | `.../scripts/recompute_panic_rank.py` |
-| 📓 Paper trading 模擬 | `.../scripts/paper_trading/simulator.py` |
-| 📓 全歷史資料快照 | `.../data/fingpt_panic_rank_full_history.csv`（4141 天）|
-| 🐳 共用 UI snapshot | `Plutus/market-risk/src/market_risk_common/ui_export.py` |
-| 🔗 上游資料鏈 | [`fingpt_risk.md`](./fingpt_risk.md) ｜ 父架構 [`../market_risk.md`](../market_risk.md) |
-
----
-
-## 十、IDE Mermaid 渲染
-
-與本 repo 其他 flowchart 一致（淺底深字、`%%{init}%%` 主題）。
-安裝指南見 [`../services.md`](../services.md) §七，或直接貼到 [mermaid.live](https://mermaid.live) 驗證。
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

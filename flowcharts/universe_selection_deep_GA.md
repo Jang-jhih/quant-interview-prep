@@ -10,7 +10,6 @@
 2. **怎麼評分？** 把個體的條件組合轉成持倉 → 回測 → 取出 10 個績效指標 → 加權得到適應度。
 3. **怎麼避免過擬合？** 60% 內樣本訓練、40% 外樣本驗證，並用 PBO 機率（真實策略沒贏過隨機策略的比例）懲罰適應度。
 
-> 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第八節**。
 
 > 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
 
@@ -254,33 +253,22 @@ flowchart TD
 | 評分模式 | weighted | 加權平均 |
 | 驗證模式 | IS_OOS | 60/40 內外樣本 |
 
-> 以上皆取自 notebook cell 3 的 `config` dict。完整口徑見 [`_FACTS.md`](./_FACTS.md) §四。
 
 ---
 
-## 六.1、程式碼實際放在哪（現場展示前務必先看）
+## 七、程式碼分層
 
-⚠️ **`ga_yoy_v1.ipynb` 只有 3 個 cell**，裡面**沒有**演化邏輯：
+策略與引擎是分開的：
 
-| cell | 內容 |
+| 層 | 內容 |
 |---|---|
-| 1 | `import` + `sys.path.append(os.environ['CONDITION_PATH'])` + `from GA_v3.main import main` |
-| 2 | `get_position()` 持倉函式（流動性 > 1,500 萬 → 乘 YoY → `is_largest(10)` → `sim()`） |
-| 3 | `weights` 與 `config` dict（族群 70、`ngen` 400、15 核…） |
+| **策略檔**（notebook） | 只有三段：匯入、持倉函式 `get_position()`、參數 `config`——「這個策略是什麼」 |
+| **引擎**（獨立 package） | DEAP Toolbox、400 代演化迴圈、適應度函式、IS/OOS 切分、PBO 懲罰、checkpoint |
 
-**GA 引擎在另一個 package**：`Finlab_/jupyter/strategy/pakage/GA_v3/`
-（`main.py`、`evaluate.py`、`score.py`、`validation.py`、`run_ga.py`、`process_data.py`），
-由 `CONDITION_PATH` 環境變數注入。
+這樣切的好處是**引擎可重用**：同系列的其他 GA 策略（GVI、PEG、PRG）共用同一套演化引擎，
+換策略只要換持倉函式與參數。
 
-> DEAP Toolbox 建構、400 代演化迴圈、適應度函式、IS/OOS 切分、PBO 懲罰、checkpoint
-> **全部在 `GA_v3/` 裡**。面試現場若要開檔展示演化邏輯，**開 `GA_v3/`，不要開 notebook**。
->
-> 這個切分本身也是可以講的設計：**notebook 只放「這個策略是什麼」（持倉函式 + 參數），
-> 引擎是可重用的 package**——所以同層的 `ga_GVI_v2` / `ga_peg` / `ga_prg` 可以共用同一套引擎。
-
----
-
-## 七、技術棧
+## 八、技術棧
 
 | 領域 | 套件 |
 |---|---|
@@ -294,53 +282,7 @@ flowchart TD
 
 ---
 
-## 八、如何在 IDE 完整呈現 Mermaid 流程圖
-
-這份文件中的所有流程圖使用 **Mermaid 語法**，已內嵌「淺底深字」主題變數，**相容於亮／暗 IDE 主題**，不需另外調整配色。要在 IDE 看到渲染結果，依使用的 IDE 安裝對應套件：
-
-### VS Code / Cursor（最推薦）
-
-在延伸模組市集搜尋並安裝**任一**即可：
-
-| 套件 | Publisher | 說明 |
-|---|---|---|
-| **Markdown Preview Mermaid Support** | *Matt Biilmann* | 最主流、最穩定，安裝後直接用 `Ctrl+Shift+V` 預覽 Markdown 就會渲染 |
-| **Markdown Mermaid** | *Brian Koh* | 整合更完整，支援匯出 PNG/SVG |
-| **Mermaid Markdown Syntax Highlighting** | *NETRON* | 額外提供語法高亮（可與上面任一搭配） |
-
-**操作**：打開 `.md` 檔 → `Ctrl+Shift+V`（Mac: `Cmd+Shift+V`）開啟預覽 → 流程圖會自動渲染。
-
-> 若想所見即所得（邊打字邊渲染）：安裝上面任一擴充後，再加裝 **Markdown All in One**（*yzhang*）。
-
-### JetBrains 家族（PyCharm / IntelliJ / DataGrip）
-
-**新版 (2023.1 之後) 內建支援**，無需額外安裝：
-
-1. `Settings` → `Languages & Frameworks` → `Markdown`
-2. 勾選 **"Render Mermaid diagrams in preview"**
-3. 開啟 Markdown 檔後，右上角切換到 **Preview** 或 **Split** 模式即可
-
-**舊版** 需在 Plugins 市集搜尋 *Markdown* plugin 並升級至內建版本。
-
-### GitHub / GitLab
-
-**原生支援**，把 `.md` push 上去後直接在網頁上看到渲染結果，**不需安裝任何套件**。
-
-### Obsidian / Notion / HackMD
-
-**原生支援**，把整份內容貼進去即會渲染。適合用來當面試時的展示媒介。
-
-### 瀏覽器直接看（免安裝）
-
-把整份 `.md` 內容貼到以下任一線上工具即可：
-- **Mermaid Live Editor**：https://mermaid.live
-- **GitHub Gist**：貼成 `.md` gist 直接渲染
-
 ---
 
-## 九、附錄：Mermaid 渲染驗證
-
-如果你的 IDE 流程圖顯示空白或出現語法錯誤，先做這兩件事：
-
-1. **確認副檔名為 `.md`**（不是 `.txt`、`.markdown`）
-2. **貼到 [mermaid.live](https://mermaid.live) 驗證語法**：能渲染就代表 IDE 端問題；不能渲染代表語法錯（這份文件已通過驗證）。
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

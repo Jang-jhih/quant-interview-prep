@@ -237,7 +237,7 @@ hold-out 開封後**不得回頭改選 R2**——那會讓 hold-out 從「考試
 
 ---
 
-## 七、方法論紀律清單（這議題最值得抄的部分）
+## 七、方法論紀律清單
 
 | 紀律 | 具體做法 |
 |---|---|
@@ -265,7 +265,7 @@ hold-out 開封後**不得回頭改選 R2**——那會讓 hold-out 從「考試
 
 ---
 
-## 八、引用上游 PIVOT 訊號的正確姿勢
+## 八、引用上游 PIVOT 訊號的處理
 
 本議題用了 `eth_twii_risk` 的 ETH 強度訊號，而該議題**判定是 PIVOT**。這需要一段明確說明：
 
@@ -278,42 +278,9 @@ hold-out 開封後**不得回頭改選 R2**——那會讓 hold-out 從「考試
 
 ---
 
-## 九、地雷與講法
-
-- **不要說「回撤從 −56% 砍到 −12%」就停**——必須接著講「代價是同期少賺一半（3.94x → 1.89x）」。
-  只講前半段是行銷，講完整才是研究
-- **不要說這是 KEEP**——判定是 **CONDITIONAL**，且 phase1/2/3 是探索期 informative
-- **不要漏講樣本窗**：約 7 年、**測不到 2008 與 2011**，而那是保護價值最大的兩段
-- **不要說「已實盤」**——未接 vectorbt 對帳、未扣完整交易成本鏈
-- **被問「八次亮燈只對一次，這訊號不是很差嗎」**：這是保險的本質——
-  保費是為了少數幾次真的有事。問題不在命中率，在**保費是否划算**，
-  而本議題的結論正是「在這 1.5 年的多頭裡不划算」（所以是 CONDITIONAL 不是 KEEP）
-- **被問「為什麼不用表現最好的 R2」**：見 §6.5——那會讓 hold-out 作廢。這題答對是大加分
-- **被問「這算策略嗎」**：算 Pack D，但**角色是 overlay（部位規模管理）**，
-  不決定進場方向，只決定「已經在場內的人該扛幾倍」
+> 口語說明、預期追問與地雷題見 [`_INTERVIEW_BRIEFING.md`](../_INTERVIEW_BRIEFING.md) 第二章。
 
 ---
 
-## 十、程式碼索引（面試時可快速跳轉）
-
-| 角色 | 路徑（host 視角） |
-|---|---|
-| 🎯 模組入口 README | `Plutus/market-risk/analyses/leverage_guard_overlay/README.md` |
-| 🎯 **事前登記（FROZEN）** | `.../leverage_guard_overlay/plan.md`（§5 phase1 門檻、§8–13 phase2、§14–17 phase3、§20 hold-out 開封規則）|
-| 🎯 軸契約 + 強制揭露三項 | `.../leverage_guard_overlay/AGENTS.md` |
-| 📓 phase1 三腿守門 | `.../versions/phase1_three_leg_guard_2026_07_28/report.md` + `phase1_{grid,verdict,yearly,diag,conservatism_control}.csv` |
-| 📓 phase2 surge 回補 | `.../versions/phase2_surge_addback_2026_07_28/report.md` + `phase2_{grid,verdict,placebo,add_mae,falserebound_*}.csv` |
-| 📓 phase3 槓桿上限 | `.../versions/phase3_leverage_ceiling_2026_07_28/report.md` + `report_options.md` |
-| 📓 **phase5 hold-out 開封** | `.../versions/phase5_holdout_2026_07_28/report.md` |
-| 🔍 執行腳本 | `.../scripts/run_phase3_leverage_ceiling.py`、`run_phase5_holdout.py` |
-| 🔗 上游 E01/E02 訊號源 | `Plutus/market-risk/analyses/top_risk/futures_chip_analysis/`（v6 `build_signal_bundle()` 重算；v8 預上線回測）|
-| 🔗 上游 ETH 訊號源 | `Plutus/market-risk/analyses/top_risk/eth_twii_risk/`（見 [`../market_risk.md`](../market_risk.md) §六）|
-| 🔗 凍結的前置研究 | `Plutus/market-risk/analyses/index_futures_derisk/versions/h3_chip_escape_derisk_2026_07_22/report.md`（0/12 KEEP）|
-| 🐳 資料源 | `finlab_benchmark_return`（TAIEX TR）、`finlab_market_price`（OTC `IX0043`）、`finlab_futures_price`（TX 一般）|
-
----
-
-## 十一、IDE Mermaid 渲染
-
-與本 repo 其他 flowchart 一致（淺底深字、`%%{init}%%` 主題）。
-安裝指南見 [`../services.md`](../services.md) §七，或直接貼到 [mermaid.live](https://mermaid.live) 驗證。
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

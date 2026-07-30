@@ -102,14 +102,14 @@ flowchart TB
 
 ---
 
-## 二.1、已展開的獨立研究（四個 Pack 各有代表案例）
+## 三、四個 Pack 的代表案例
 
 > 置於 [`./market_risk_studies/`](./market_risk_studies/) 子資料夾。**四份合起來才看得到完整故事**：
 > 從「訊號沒過（A）」→「訊號真的過了（B）」→「不做方向的環境描述（C）」→「訊號怎麼變成部位（D）」。
 
 | Pack | 研究主題 | 獨立文件 | 判定 | 面試故事 |
 |---|---|---|---|---|
-| **A · top_risk** | ETH → 台股崩盤預警 | 本檔 §六 案例 | **PIVOT**（檢力失敗）| 嚴重度階梯單調放大但 OOS 只有 4 個獨立事件；誠實區分「檢力失敗」與「證據失敗」 |
+| **A · top_risk** | ETH → 台股崩盤預警 | 本檔 §七 案例 | **PIVOT**（檢力失敗）| 嚴重度階梯單調放大但 OOS 只有 4 個獨立事件；誠實區分「檢力失敗」與「證據失敗」 |
 | **B · bottom_dip** | 恐慌抄底訊號 | [`fingpt_panic_rebound.md`](./market_risk_studies/fingpt_panic_rebound.md) | ✅ **IS + OOS 雙 KEEP** | **全平台唯一通過完整驗證的訊號**：IS n=69 / OOS n=13 / 4 段 walk-forward / 4 次危機事件全過，含 2020 COVID |
 | **C · auxiliary_signal** | FinGPT 恐慌環境指數 | [`fingpt_risk.md`](./market_risk_studies/fingpt_risk.md) | Overlay（降格後保留）| 兩次連續 pivot 的因果鏈：先誤判為「訊號退化」，追查後發現是 baseline drift，再發現卡點的前提本身也寫錯 |
 | **C · auxiliary_signal** | 產業輪動風險 | [`industry_rotation_risk.md`](./market_risk_studies/industry_rotation_risk.md) | v1 LOCK | **12 輪 autoresearch**（1 KEEP + 11 DISCARD）；v8/v9 Pareto 邊界；自曝 circular 評估 |
@@ -118,11 +118,10 @@ flowchart TB
 > Pack C 底下 `analyses/auxiliary_signal/` 共 7 個子模組；尚未展開的 5 個
 > （`composite_aux_ensemble` / `concept_vol_decay` / `derivatives_chip_thermometer` /
 > `no_leader_vol_breadth` / `vol_lead_indicators`）維持在 Pack C 節點底下，待後續按需擴充。
-> 其餘 Pack 的未展開清單見 [`SOURCE_MANIFEST.md`](./SOURCE_MANIFEST.md)「已知 gap」。
 
 ---
 
-## 三、資料源治理與雙市場覆蓋
+## 四、資料源治理與雙市場覆蓋
 
 > 所有指標、標籤、基準指數一律從倉儲 parquet 讀取。禁止直連 FinLab API、禁止讀 FinLab 私有 pickle／feather cache、禁止在腳本同層自建 dataset。TAIEX 與 OTC 必須同時評估。
 
@@ -184,7 +183,7 @@ flowchart LR
 
 ---
 
-## 四、Label 工程（路徑型事件 Label）
+## 五、Label 工程（路徑型事件 Label）
 
 > Label 抓的是「未來 h 天**曾經**最深跌到哪／最高漲到哪」，不是「第 h 天收在哪」。前者抓得到盤中被洗出去的風險，點對點報酬抓不到。尾端 h 日一律 NaN，不補 0——「未知」與「未發生」必須可區分。
 
@@ -252,7 +251,7 @@ flowchart TB
 
 ---
 
-## 五、統計驗證管線（防漏、防重抽錯、防多重比較）
+## 六、統計驗證管線
 
 > 驗證基礎設施只吃呼叫端已算好的 label／mask／p 值，內部**無任何 shift(−N)、bfill 或 center**——前瞻視窗一律由 Label 工程層負責。四組工具各回答一個常被寫錯的問題。
 
@@ -320,7 +319,7 @@ flowchart TB
 | `episode_block_bootstrap` | 以「波」為單位重抽 | 以「筆」為單位重抽 → 假顯著 |
 | `probability_lift` / `fisher_lift_test` / `bh_fdr` | 訊號亮燈時事件率高多少？是不是運氣？測很多組要扣多少？ | 沒做 FDR 校正 → 偽發現 |
 
-### 五.1 前視偏差的第五道防線：機械化偵測
+### 六.1 前視偏差的第五道防線：機械化偵測
 
 前面四組是**統計**防線。但「程式碼裡不小心用到未來資料」是**工程**問題，靠 code review 抓不完。
 所以另有一個獨立工具：`core/package/data_leakage_detection/`。
@@ -340,7 +339,7 @@ flowchart TB
 
 ---
 
-## 六、研究流程與 Keep / Discard 迴圈
+## 七、研究流程與 Keep / Discard 迴圈
 
 > 流程核心：訊號發想 → Event Study 探索 → 雙 gate 把關 → (有條件) 策略回測 → Pack 評估。**禁止跳過 Event Study 直接回測**——等於盲目 grid search，不知道為什麼賺／賠。ETH/TWII 議題為本框架的代表性範例。
 
@@ -414,7 +413,7 @@ flowchart TB
 
 ---
 
-## 七、技術棧
+## 八、技術棧
 
 | 類別 | 技術 / 工具 |
 |---|---|
@@ -429,56 +428,7 @@ flowchart TB
 
 ---
 
-## 八、IDE Mermaid 渲染套件指南
-
-> 以下套件安裝後，可直接在 IDE 預覽本文 Mermaid 區塊。推薦組合以 ★ 標示。
-
-### VS Code ★ 推薦
-
-1. **Markdown Preview Mermaid Support**（bierner.markdown-mermaid）
-   - 安裝後開啟 .md → `Cmd/Ctrl + Shift + V` 預覽
-2. **Markdown All in One**（yzhang.markdown-all-in-one）
-   - 完整 Markdown 工具鏈，搭配上一個套件
-3. （選用）**Mermaid Markdown Syntax Highlighting** — 程式碼區塊語法高亮
-
-### JetBrains 系列（PyCharm / IntelliJ）
-
-1. **Markdown** plugin（內建）
-   - Settings → Languages & Frameworks → Markdown → 勾選 Mermaid 支援
-2. （選用）**Mermaid** plugin — 進階主題與匯出
-
-### 線上工具
-
-| 工具 | 用途 |
-|---|---|
-| **[mermaid.live](https://mermaid.live)** | 官方互動式編輯器，貼上語法即時預覽、調主題、匯 PNG/SVG |
-| **GitHub / GitLab** | 原生支援 Mermaid 區塊渲染，push 後直接在 README／Issue 看圖 |
-
-### Obsidian
-
-1. 內建 Mermaid 支援（無需裝套件）
-2. 進階：**Obsidian Mermaid Tools** — 主題切換、匯出增強
-
-### 注意事項
-
-- Mermaid 主題變數（`%%{init}%%`）在部分舊版渲染器可能不完整支援；建議升級到最新版套件
-- 流程圖內中文節點需確認 IDE 字型支援（VS Code 與 JetBrains 預設字型皆支援）
-- 匯出圖片時若色彩流失，改用 mermaid.live 匯出後嵌入
-
 ---
 
-## 九、渲染驗證附錄
-
-> 本文件所有 Mermaid 區塊皆採用「**淺底深字**」配色：背景一律淺色（`#ececec` / `#d6e8ff` / `#fff4d6` 等），文字一律深色（`#1a1a1a` / `#002b66` / `#5c4500` 等）。避免白底白字或淺底淺字導致投影／列印時無法閱讀。
-
-**配色對照表**
-
-| 配色名 | 底色 | 字色 | 用途 |
-|---|---|---|---|
-| 中性灰 | `#ececec` | `#1a1a1a` | 預設節點 |
-| loop 藍 | `#d6e8ff` | `#002b66` | 流程、計算、切分 |
-| highlight 黃 | `#fff4d6` | `#5c4500` | 重點節點、Label、報告 |
-| eval 紅 | `#ffd6d6` | `#6b0000` | 決策、停止、禁止 |
-| branch 橘 | `#ffe0bf` | `#6b3a00` | Gate、警告 |
-| baseline 紫 | `#e0ccff` | `#3a1488` | 策略層、顯著性檢定 |
-| finlab 綠 | `#cfeecf` | `#1f4a1f` | 輸入、資料源 |
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

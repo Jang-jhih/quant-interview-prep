@@ -115,11 +115,11 @@ flowchart TB
     classDef decision fill:#ffe8cc,stroke:#8a4a00,stroke-width:2px,color:#8a4a00
 
     JSON["/home/work/core/cmoney_concepts.json<br/>d['concepts'][cid]['group']<br/>∈ {集團股, 產業, 概念股}<br/>['stocks'] = list of stock_ids"]:::source
-    FILTER["CMONEY_GROUP = '集團股'<br/>cmoney_data.py:51<br/>→ 篩出 37 集團 / 248 檔"]:::decision
+    FILTER["CMONEY_GROUP = '集團股'<br/>→ 篩出 37 集團 / 248 檔"]:::decision
     TSE["TSE close<br/>/data_g/warehouse/<br/>finlab_price/_market/all.parquet<br/>cols: date, stock_id, close"]:::warehouse
     OTC["OTC close<br/>/data_g/warehouse/<br/>finlab_rotc_price/_market/all.parquet"]:::warehouse
-    CONCAT["concat + pivot<br/>cmoney_data.py:56-77<br/>load_close_wide()<br/>→ [date × stock]"]:::transform
-    MAP["load_cmoney_groups()<br/>cmoney_data.py:80<br/>→ dict[group → [stock_ids]]"]:::transform
+    CONCAT["concat + pivot<br/>load_close_wide()<br/>→ [date × stock]"]:::transform
+    MAP["load_cmoney_groups()<br/>→ dict[group → [stock_ids]]"]:::transform
 
     JSON --> FILTER --> MAP
     TSE --> CONCAT
@@ -427,7 +427,7 @@ flowchart TB
 
 **面試亮點 — 8 個台股寬度指標**
 
-`ad_ratio`、`pct_advancing`、`above_ma20`、`above_ma60`、`return_dispersion`、`nh_nl_index`、`new_high_ratio`、`new_low_ratio`（`scripts/breadth.py:54-91`）
+`ad_ratio`、`pct_advancing`、`above_ma20`、`above_ma60`、`return_dispersion`、`nh_nl_index`、`new_high_ratio`、`new_low_ratio`
 
 **樣本結構的不平衡**
 
@@ -441,54 +441,7 @@ flowchart TB
 
 ---
 
-## 八、IDE 與套件顯示指南
-
-本文件全部使用 **Mermaid `flowchart` 語法**，建議安裝下列任一套件以正確渲染：
-
-| IDE / 平台 | 推薦套件 | 安裝指令 |
-|---|---|---|
-| **VS Code** | Markdown Preview Mermaid Support | `ext install bierner.markdown-mermaid` |
-| **VS Code** | Markdown Preview Enhanced | `ext install shd101wyy.markdown-preview-enhanced` |
-| **Cursor** | 同 VS Code（沿用 marketplace）| 同上 |
-| **JetBrains（DataGrip / PyCharm）**| Markdown 外掛（內建）| Settings → Plugins → Markdown → 啟用 Mermaid |
-| **GitHub Web** | 原生支援 | 無需安裝 |
-| **GitLab Web** | 原生支援 | 無需安裝 |
-| **Obsidian** | 內建 Mermaid | 設定 → Markdown → 啟用 Mermaid |
-| **CLI 預覽** | `mermaid-cli` | `npm i -g @mermaid-js/mermaid-cli`<br/>`mmdc -i industry_rotation_risk.md -o out.svg` |
-
-**配色規範**（與本 repo 其他 flowchart 一致）
-
-- 統一使用 `%%{init}%%` 主題：`primaryColor:#ececec`、`primaryTextColor:#1a1a1a`、`lineColor:#444444`
-- classDef 全部補 `color:`（淺底深字）
-- 配色語意：
-  - 🔵 藍（source / external / intermediate）：資料源、外部驗證、中介值
-  - 🔴 紅（primary / discard）：主決策指標、DISCARD 結果
-  - 🟡 黃（warehouse / guard / input）：快取、守門、輸入
-  - 🟢 綠（compute / compose / keep）：計算流程、KEEP 結果
-  - 🟠 橘（decision / trigger / pareto）：分支判斷、觸發、Pareto 邊界
-  - 🟣 紫（output / tier）：下游輸出、風險等級
-  - ⚪ 灰（warning / invalid）：警告、無效評估
-
 ---
 
-## 九、程式碼索引（面試時可快速跳轉）
-
-| 角色 | 路徑（host 視角） |
-|---|---|
-| 🎯 模組入口 README | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/README.md` |
-| 🎯 Baseline 契約（v1-v12 詳細）| `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/notes/baseline_contract.md` |
-| 🎯 v1 baseline 結案 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/versions/v1_baseline/README.md` |
-| 🔍 cmoney 載入 + 雙指標 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/cmoney_data.py` |
-| 🔍 指標計算（Z-score + score）| `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/indicators.py` |
-| 🔍 組裝 + 評估 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/assess.py` |
-| 🔍 報告 + Discord | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/report.py` |
-| 🔍 每日入口 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/run_daily.py` |
-| 🔍 Autoresearch v2 框架 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/autoresearch_v2.py` |
-| 🔍 指標 cache | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/data_loader.py` |
-| 📓 台股寬度 8 指標 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/breadth.py` |
-| 📓 美股寬度 OOS | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/run_us_breadth_oos.py` |
-| 📓 外部寬度驗證報告 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/notes/breadth_correlation_oos_2023_2024.md` |
-| 📓 circular trap 揭露 | `Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/notes/cmoney_classification_test/findings.md` |
-| 🐳 共用 gate framework | `Plutus/market-risk/src/market_risk_common/signal_gate.py` |
-| 🐳 Discord sender | `Plutus/infrastructure/jupyter/scripts/risk/discord_sender.py` |
-| 🐳 共用 UI snapshot | `Plutus/market-risk/src/market_risk_common/ui_export.py` |
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

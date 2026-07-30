@@ -16,7 +16,6 @@
 | **Condition** | 優化事件濾網 | T-stat + Hit Rate + Coverage | 策略進場濾網條件 |
 | **Strategy** | 生成完整交易策略 | FinLab `sim()` Sharpe / Calmar / MDD | 可直接部署的交易策略 |
 
-> 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第八節**。
 
 > 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
 
@@ -325,7 +324,7 @@ flowchart LR
 | 參數 | 預設值 | 意義 |
 |---|---|---|
 | 演化代數 | 20 / 400（可調） | MAP-Elites 主迴圈世代數 |
-| LLM 模型 | **MiniMax-M3**（三處角色，見 §六.1） | 程式生成 LLM，走 OpenAI 相容 client |
+| LLM 模型 | **MiniMax-M3**（三處角色，見 §6.1） | 程式生成 LLM，走 OpenAI 相容 client |
 | Diff 格式 | SEARCH/REPLACE | 候選程式增量更新格式 |
 | 重採樣週期 | D / W / M / Q | IC 計算的時間週期 |
 | `scoring_mode` | icir / multi_objective | 評分器選擇 |
@@ -342,7 +341,7 @@ flowchart LR
 | 優化策略濾網 | Condition | MAP-Elites 探索多樣性 + T-stat/Hit Rate 確保精準 |
 | 生成可部署策略 | Strategy | Side-Channel 從 traceback 學習 + FinLab sim() 真實驗證 |
 
-### 六.1 LLM 配置：同一個模型、三個角色
+### 6.1 LLM 配置：同一個模型、三個角色
 
 配置檔（`openevolve/financial_evolution/src/configs/boolean_factor_config.yaml`
 與 `configs/modes/{alpha,condition,strategy}/*.yaml`）裡 **MiniMax-M3 被指派了三個不同角色**：
@@ -374,3 +373,7 @@ flowchart LR
 | 視覺化瀏覽        | **Next.js**（`plutus_ui/web/` 的 `/evolution` 路由，唯讀）     |
 | 過擬合檢測        | **DSR** (Deflated Sharpe Ratio) + IC stability         |
 
+---
+
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。

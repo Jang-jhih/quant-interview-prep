@@ -81,9 +81,9 @@ flowchart LR
 
 **寫入設計重點**
 
-- `WarehouseWriter.append()`（`tools/pipeline/warehouse_writer.py:67`）走 atomic write + DuckDB `MetadataStore.update_catalog`（`:114`），按年分檔
-- `dedup_keys = [date, stock_id, url]`（`config.py:19`）—— 同一篇新聞被重複爬不會重複寫
-- `explode_sentiment_records`（`transforms.py:71`）把一篇多股新聞展開為多個 (date, stock_id) 列，**1 新聞 → N 列**
+- `WarehouseWriter.append()`走 atomic write + DuckDB `MetadataStore.update_catalog`（`:114`），按年分檔
+- `dedup_keys = [date, stock_id, url]`—— 同一篇新聞被重複爬不會重複寫
+- `explode_sentiment_records`把一篇多股新聞展開為多個 (date, stock_id) 列，**1 新聞 → N 列**
 
 ---
 
@@ -100,13 +100,13 @@ flowchart TB
     classDef decision fill:#ffe8cc,stroke:#8a4a00,stroke-width:2px,color:#8a4a00
     classDef loop fill:#d6e8ff,stroke:#002b66,stroke-width:1.5px,color:#002b66
 
-    INGEST["scripts/ingest_news.py:50<br/>finlab.data.get('tw_news_cnyes')"]:::source
+    INGEST["finlab.data.get('tw_news_cnyes')"]:::source
     SCRAPE["NewsScraper<br/>tools/pipeline/scraper.py<br/>抓 cnyes 正文"]:::source
-    WRITER["WarehouseWriter.append()<br/>tools/pipeline/warehouse_writer.py:67<br/>→ atomic year-file"]:::warehouse
+    WRITER["WarehouseWriter.append()<br/>→ atomic year-file"]:::warehouse
     RAW[("/data_g/warehouse/<br/>fingpt_news_raw/_market/{year}.parquet")]:::warehouse
-    INFER["scripts/run_inference.py:31<br/>讀 RAW → 推論 → 寫 SENT"]:::model
+    INFER["讀 RAW → 推論 → 寫 SENT"]:::model
     LLM["MODEL_ID = NousResearch/<br/>Meta-Llama-3-8B-Instruct<br/>LORA_ID = FinGPT/<br/>fingpt-mt_llama3-8b_lora<br/>BATCH=16 (config.py:11-13)"]:::model
-    EXPLODE["explode_sentiment_records<br/>transforms.py:71<br/>1 新聞 → N (stock_id) 列"]:::model
+    EXPLODE["explode_sentiment_records<br/>1 新聞 → N (stock_id) 列"]:::model
     DEDUP["dedup_keys =<br/>[date, stock_id, url]"]:::decision
     SENT[("/data_g/warehouse/<br/>fingpt_stock_sentiment/_market<br/>12 年 ~2900 檔")]:::warehouse
 
@@ -140,20 +140,20 @@ flowchart TB
     classDef combine fill:#ffe8cc,stroke:#8a4a00,stroke-width:2px,color:#8a4a00
     classDef output fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488
 
-    SENT["read_fingpt_data<br/>tools/read_fingpt_data.py:90"]:::input
-    WIDE["convert_to_wide_format<br/>tools/read_fingpt_data.py:122<br/>pivot_table + aggfunc=mean"]:::transform
-    Z["cross_sectional Z<br/>fingpt_risk_indicator.py:97<br/>(x-μ_daily)/σ_daily"]:::transform
+    SENT["read_fingpt_data"]:::input
+    WIDE["convert_to_wide_format<br/>pivot_table + aggfunc=mean"]:::transform
+    Z["cross_sectional Z<br/>(x-μ_daily)/σ_daily"]:::transform
 
     subgraph SUB4["4 sub-indicators 並聯計算（tools/fingpt_risk_indicator.py）"]
         direction LR
-        P["panic_index<br/>(:110)<br/>#{Z<-1.5} / N"]:::sub
-        V["sentiment_volatility<br/>(:141)<br/>rolling(5).std"]:::sub
-        A["anomaly_count<br/>(:173)<br/>#{|Z|>2.0}"]:::sub
-        T["sentiment_trend<br/>(:199)<br/>5d linreg slope"]:::sub
+        P["panic_index<br/>#{Z<-1.5} / N"]:::sub
+        V["sentiment_volatility<br/>rolling(5).std"]:::sub
+        A["anomaly_count<br/>#{|Z|>2.0}"]:::sub
+        T["sentiment_trend<br/>5d linreg slope"]:::sub
     end
 
     GET["get_time_series()<br/>:683<br/>合併 4 條為 DataFrame"]:::combine
-    RANK["calculate_quantile_ranks<br/>(min_periods=60)<br/>fingpt_risk_indicator.py:489-554"]:::combine
+    RANK["calculate_quantile_ranks<br/>(min_periods=60)"]:::combine
     OUT["panic_index_rank<br/>volatility_rank<br/>anomaly_count_rank<br/>trend_rank<br/>(全部 [0,1] expanding percentile)"]:::output
 
     SENT --> WIDE --> Z --> SUB4 --> GET --> RANK --> OUT
@@ -268,12 +268,12 @@ flowchart TB
 
     CRON["n8n Schedule Trigger<br/>FinGPT_Daily_Update.json<br/>cron: 30 22 * * *<br/>(Asia/Taipei)"]:::schedule
     POST["trigger-update node<br/>POST /api/warehouse/update-fingpt<br/>?lookback_days=3"]:::api
-    GUARD["main.py:1002-1014<br/>pgrep -f run_daily_update /<br/>run_backfill / run_inference /<br/>ingest_news"]:::guard
+    GUARD["pgrep -f run_daily_update /<br/>run_backfill / run_inference /<br/>ingest_news"]:::guard
     SKIP{"GPU 已在跑?"}:::guard
     SKIPSND["Discord: Skipped Notification<br/>→ DISCORD_BULK_DOWNLOAD_WEBHOOK"]:::error
-    RUN["main.py:995<br/>warehouse_update_fingpt()<br/>subprocess: run_daily_update.py<br/>--lookback-days 3"]:::process
+    RUN["warehouse_update_fingpt()<br/>subprocess: run_daily_update.py<br/>--lookback-days 3"]:::process
     LOG["/tmp/fingpt_daily_update.log<br/>marker: 'daily update ok' /<br/>'daily update failed'"]:::process
-    UI["main.py:365<br/>/api/fingpt_risk/run_daily<br/>python -m fingpt_risk.scripts.export_ui_snapshot"]:::process
+    UI["/api/fingpt_risk/run_daily<br/>python -m fingpt_risk.scripts.export_ui_snapshot"]:::process
     SNAPSHOT["market_risk_common.ui_export<br/>write_ui_snapshot (schema v2)<br/>→ results/ui/latest_assessment.json<br/>→ results/ui/history.csv"]:::output
     DISC["Build Discord Message node<br/>→ webhook"]:::output
 
@@ -295,7 +295,7 @@ flowchart TB
 
 - **GPU 防呆**：用 `pgrep -f` 同時檢查 4 個衝突 process（`run_daily_update / run_backfill / run_inference / ingest_news`），避免 LLM 推論疊加 OOM
 - **Atomic UI snapshot**：`market_risk_common.ui_export.write_ui_snapshot` 走 schema_version=2 atomic write，下游 dashboard 不會讀到半成品
-- **狀態查詢**：`GET /api/warehouse/fingpt-status`（`main.py:1048`）從 log 末行判定 `result=ok|error|unknown`——不需 DB
+- **狀態查詢**：`GET /api/warehouse/fingpt-status`從 log 末行判定 `result=ok|error|unknown`——不需 DB
 
 ---
 
@@ -305,7 +305,7 @@ flowchart TB
 > 這**不是兩個獨立事件，是一條因果鏈**——第二天推翻的正是第一天決策所依據的前提。
 > 講的時候一定要串起來，這才是這個故事真正的價值。
 
-### 七.0 一定要先講對的版本（三段式）
+### 7.1 正確的講法（三段式）
 
 很多人會把這故事講成「IC/IR 退化 → 訊號變差 → 降格」。**這樣講會被自己的 repo 打臉**
 （`plan.md:35`、`notes/brainstorming.md:27-28`、`versions/v0_aux_pivot/README.md:12`、
@@ -375,75 +375,27 @@ flowchart LR
 
 ---
 
-## 七.1、已知技術債（被問「跑得起來嗎」要先知道）
+## 八、已知技術債
 
-模組有 `KNOWN_ISSUES.md`，記載**3 個 pytest 失敗 + 17 個 skipped**。
-面試若對方要求「現場跑一下測試」，**不能被這個嚇到**——要能主動說明：
+模組有 **3 個 pytest 失敗 + 17 個 skipped**，都是 pre-existing，已記錄在 `KNOWN_ISSUES.md`：
 
-| # | 失敗測試 | 原因 | 性質 |
-|---|---|---|---|
-| 1 | `test_min_periods_constraint` | rank 函式邊界處理：`min_periods` 應為 `min(20, len)` 才正確 | 測試與實作對 `min_periods` 語意理解不一致 |
-| 2 | `test_get_time_series_structure` | 產出欄位已改名 `sentiment_volatility` → `volatility`，測試還期待舊名 | **測試沒跟上重構** |
-| 3 | `test_ic_calculation_consistency` | IC 計算迴圈對 scalar 做索引 → `IndexError` | 舊路徑的殘留（該軸已不用方向 IC）|
-| — | 17 個 skipped（`test_ic_monitor.py`）| 測試內部 `pytest.skip('ic_monitor.py 尚未實作')`，但該檔實際存在且可 import → 應是期待某個未實作方法 | skip 條件過期 |
-
-**標準答法**：「這 3 個是 pre-existing 失敗，記在 `KNOWN_ISSUES.md`，
-性質是**測試沒跟上重構**跟**舊 IC 路徑殘留**，不是指標算錯——
-指標本身的正確性由 `validate_auxiliary_signal.py` 的 Pack C 驗證與 notebook 的 Restart + Run All 保證。
-處置原則是**修之前先補對應單測**，避免邊修邊退化。」
-
-> ⚠️ **不要說「測試都是綠的」**。briefing 共通問答提到「用 pytest 驗證」，
-> 如果對方追問就會撞到這裡——主動說明反而是加分項。
-> 對照組：姊妹議題 [`fingpt_panic_rebound`](./fingpt_panic_rebound.md) 的測試是 **61 passed 全綠**，
-> 可以拿來說明「新寫的議題有把測試紀律補上」。
-
----
-
-## 八、IDE 與套件顯示指南
-
-本文件全部使用 **Mermaid `flowchart` 語法**，建議安裝下列任一套件以正確渲染：
-
-| IDE / 平台 | 推薦套件 | 安裝指令 |
-|---|---|---|
-| **VS Code** | Markdown Preview Mermaid Support | `ext install bierner.markdown-mermaid` |
-| **VS Code** | Markdown Preview Enhanced | `ext install shd101wyy.markdown-preview-enhanced` |
-| **Cursor** | 同 VS Code（沿用 marketplace）| 同上 |
-| **JetBrains（DataGrip / PyCharm）**| Markdown 外掛（內建）| Settings → Plugins → Markdown → 啟用 Mermaid |
-| **GitHub Web** | 原生支援 | 無需安裝 |
-| **GitLab Web** | 原生支援 | 無需安裝 |
-| **Obsidian** | 內建 Mermaid | 設定 → Markdown → 啟用 Mermaid |
-| **CLI 預覽** | `mermaid-cli` | `npm i -g @mermaid-js/mermaid-cli`<br/>`mmdc -i fingpt_risk.md -o out.svg` |
-
-**配色規範**（與本 repo 其他 flowchart 一致）
-
-- 統一使用 `%%{init}%%` 主題：`primaryColor:#ececec`、`primaryTextColor:#1a1a1a`、`lineColor:#444444`
-- classDef 全部補 `color:`（淺底深字，避免白底白字）
-- 配色語意：
-  - 🔵 藍（source / state）：資料源、狀態變數
-  - 🔴 紅（model / primary）：LLM 推論、主決策指標
-  - 🟡 黃（warehouse / guard / baseline）：快取、守門、原始狀態
-  - 🟢 綠（indicator / process / fix）：計算、流程、修正
-  - 🟠 橘（decision / pivot）：分支判斷、Pivot 動作
-  - 🟣 紫（consumer / output / lesson）：下游消費、最終輸出、學到的事
-
----
-
-## 九、程式碼索引（面試時可快速跳轉）
-
-| 角色 | 路徑（host 視角） |
+| 性質 | 內容 |
 |---|---|
-| 🎯 模組入口 README | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/README.md` |
-| 🎯 軸契約（禁止方向預測）| `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/AGENTS.md` |
-| 🔍 主指標類 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/fingpt_risk_indicator.py` |
-| 🔍 資料載入 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/read_fingpt_data.py` |
-| 🔍 Pipeline config（模型 ID）| `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/pipeline/config.py` |
-| 🔍 Warehouse 寫入 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/pipeline/warehouse_writer.py` |
-| 🔍 推論腳本 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/scripts/run_inference.py` |
-| 🔍 Ingest 腳本 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/scripts/ingest_news.py` |
-| 📓 Dashboard notebook | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/notebooks/risk_dashboard.ipynb` |
-| 📓 Pack C 驗證 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/analysis/validate_auxiliary_signal.py` |
-| 📓 v0_aux_pivot 復現 | `Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/versions/v0_aux_pivot/replicate.py` |
-| 🐳 n8n workflow | `Plutus/services/n8n/workflows/FinGPT_Daily_Update.json` |
-| 🐳 API endpoint | `Plutus/infrastructure/jupyter/api/main.py`（`/api/warehouse/update-fingpt` L995、`/api/fingpt_risk/run_daily` L365、`/api/warehouse/fingpt-status` L1048）|
-| 🐳 共用 UI snapshot | `Plutus/market-risk/src/market_risk_common/ui_export.py` |
-| 🐳 Discord sender | `Plutus/infrastructure/jupyter/scripts/risk/discord_sender.py` |
+| **測試沒跟上重構** | 產出欄位改名後，測試仍期待舊欄位名 |
+| **舊路徑殘留** | 方向 IC 的計算測試——該軸 pivot 後已不使用方向 IC |
+| **邊界條件認知不一致** | 測試與實作對 `min_periods` 的語意理解不同 |
+| **skip 條件過期** | 17 個 skipped 的前提（「某模組尚未實作」）其實已不成立 |
+
+**這些不是指標算錯**。指標本身的正確性由 Pack C 驗證腳本與 notebook 的 Restart + Run All 保證。
+處置原則是**修之前先補對應單測**，避免邊修邊退化。
+
+> ⚠️ **不要說「測試都是綠的」**——被追問就會撞到這裡，主動說明反而加分。
+> 對照組：姊妹議題 [`fingpt_panic_rebound`](./fingpt_panic_rebound.md) 是 **61 passed 全綠**，
+> 可以說明新寫的議題已把測試紀律補上。
+
+---
+
+---
+
+> 本文件的流程圖採 Mermaid 語法，GitHub / GitLab / Obsidian 原生支援；
+> VS Code 需安裝 *Markdown Preview Mermaid Support*。
