@@ -14,11 +14,43 @@
 | **與策略層切分** | 只發明並驗證訊號的預測力；**部位規模／方向／進出場**一律交下游獨立策略層決定 |
 | **雙市場覆蓋** | TAIEX（上市）＋ OTC（上櫃）同步評估；指數口徑須明確標示「價格指數」vs「報酬指數 total return」 |
 
+> 📖 **讀法**：想快速理解看 **§2.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
+
 ---
 
 ## 二、整體研究架構（兩層四 Pack）
 
 > 研究本體分為「訊號發明層」與「獨立策略層」。前者只輸出可評估訊號，後者消費上游訊號形成可下單策略。四種 Pack 對應四種 label 與 Keep 門檻，**契約不可混用**。
+
+### 2.0 白板版（被要求「畫一下你的風險研究框架」時畫這張）
+
+> 5 個框。口訣：**上面三個只發明訊號、下面一個才決定部位；C 是無方向的環境條件。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','fontSize':'14px'}}}%%
+flowchart TB
+    A["Pack A · top_risk<br/>P(down) 預測下跌"]
+    B["Pack B · bottom_dip<br/>P(up) 預測反彈"]
+    C["Pack C · auxiliary<br/>市場狀態 (無方向)"]
+    D["Pack D · 獨立策略<br/>部位規模 · 方向 · 進出場"]
+    V["統計驗證共用層<br/>purged WF · n_eff<br/>block bootstrap · FDR"]
+
+    A --> D
+    B --> D
+    C -- "gate / overlay 條件" --> D
+    V -. "共用" .-> A
+    V -. "共用" .-> B
+    V -. "共用" .-> C
+
+    classDef sig fill:#fff4d6,stroke:#5c4500,stroke-width:2px,color:#5c4500;
+    classDef str fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    classDef val fill:#d6e8ff,stroke:#002b66,stroke-width:2px,color:#002b66;
+    class A,B,C sig;
+    class D str;
+    class V val;
+```
+
+### 2.1 細節版
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','secondaryColor':'#f4f4f4','fontSize':'14px'}}}%%
@@ -54,6 +86,11 @@ flowchart TB
     class SIG,STR layer
 ```
 
+> **用語釘死（會被拿 CLAUDE.md 對帳）**：`market-risk/CLAUDE.md` 另有「**研究方法六類**」的說法
+> （Event Study、因子研究…等**方法論**分類）。**方法論六類 ≠ 評估契約四類**：
+> 前者決定「用什麼手法研究」，後者決定「用什麼指標判 Keep」。
+> 換方法論**不改** Pack A/B/C/D 契約——被問到時要能一句話分清這兩個維度。
+
 **評估契約差異（Keep 門檻）**
 
 | Pack | Label 形式 | 主決策指標 | 禁止 |
@@ -65,16 +102,23 @@ flowchart TB
 
 ---
 
-## 二.1、Pack C · auxiliary_signal 已展開的獨立研究
+## 二.1、已展開的獨立研究（四個 Pack 各有代表案例）
 
-> Pack C 底下 `analyses/auxiliary_signal/` 共 7 個子模組，其中 2 個研究深度足以獨立成 flowchart，置於 [`./market_risk_studies/`](./market_risk_studies/) 子資料夾：
+> 置於 [`./market_risk_studies/`](./market_risk_studies/) 子資料夾。**四份合起來才看得到完整故事**：
+> 從「訊號沒過（A）」→「訊號真的過了（B）」→「不做方向的環境描述（C）」→「訊號怎麼變成部位（D）」。
 
-| 研究主題 | 獨立文件 | 核心方法 | 面試故事 |
-|---|---|---|---|
-| **FinGPT 恐慌指數環境監控** | [`market_risk_studies/fingpt_risk.md`](./market_risk_studies/fingpt_risk.md) | cnyes 新聞爬蟲 → Llama-3-8B + FinGPT LoRA 推論（**12 年 ~2900 檔**）→ 4 sub-indicators → expanding percentile → Pack C state_icc/spearman 驗證 → n8n 每日 22:30 排程 | 兩次 pivot 故事：2026-07-14 因 IC/IR 退化**主動降格**為 overlay；2026-07-15 發現 README 寫錯**公開修正**物理上限 vs 啟動門檻 |
-| **產業輪動風險監控** | [`market_risk_studies/industry_rotation_risk.md`](./market_risk_studies/industry_rotation_risk.md) | cmoney 37 集團股 → rotation_intensity + theme_strength 雙指標 → 1-5 風險分數 → Discord 4 色通知 | **12 輪 autoresearch**（1 baseline KEEP + 11 DISCARD）；v8/v9 形成 Pareto 邊界；揭露 v1 η²=0.36 是 circular 評估、真正外部 η²=0.038 |
+| Pack | 研究主題 | 獨立文件 | 判定 | 面試故事 |
+|---|---|---|---|---|
+| **A · top_risk** | ETH → 台股崩盤預警 | 本檔 §六 案例 | **PIVOT**（檢力失敗）| 嚴重度階梯單調放大但 OOS 只有 4 個獨立事件；誠實區分「檢力失敗」與「證據失敗」 |
+| **B · bottom_dip** | 恐慌抄底訊號 | [`fingpt_panic_rebound.md`](./market_risk_studies/fingpt_panic_rebound.md) | ✅ **IS + OOS 雙 KEEP** | **全平台唯一通過完整驗證的訊號**：IS n=69 / OOS n=13 / 4 段 walk-forward / 4 次危機事件全過，含 2020 COVID |
+| **C · auxiliary_signal** | FinGPT 恐慌環境指數 | [`fingpt_risk.md`](./market_risk_studies/fingpt_risk.md) | Overlay（降格後保留）| 兩次連續 pivot 的因果鏈：先誤判為「訊號退化」，追查後發現是 baseline drift，再發現卡點的前提本身也寫錯 |
+| **C · auxiliary_signal** | 產業輪動風險 | [`industry_rotation_risk.md`](./market_risk_studies/industry_rotation_risk.md) | v1 LOCK | **12 輪 autoresearch**（1 KEEP + 11 DISCARD）；v8/v9 Pareto 邊界；自曝 circular 評估 |
+| **D · 獨立策略** | 槓桿守門 Overlay | [`leverage_guard_overlay.md`](./market_risk_studies/leverage_guard_overlay.md) | **CONDITIONAL** | **事前登記 + 一次性 hold-out 開封**：MDD −56.3%→−12.1%（改善 44.1pp），代價是同期少賺一半 |
 
-> 尚未展開的 5 個姊妹模組（`composite_aux_ensemble` / `concept_vol_decay` / `derivatives_chip_thermometer` / `no_leader_vol_breadth` / `vol_lead_indicators`）維持在 Pack C 節點底下，待後續按需擴充。
+> Pack C 底下 `analyses/auxiliary_signal/` 共 7 個子模組；尚未展開的 5 個
+> （`composite_aux_ensemble` / `concept_vol_decay` / `derivatives_chip_thermometer` /
+> `no_leader_vol_breadth` / `vol_lead_indicators`）維持在 Pack C 節點底下，待後續按需擴充。
+> 其餘 Pack 的未展開清單見 [`SOURCE_MANIFEST.md`](./SOURCE_MANIFEST.md)「已知 gap」。
 
 ---
 
@@ -181,15 +225,30 @@ flowchart TB
     NAN -. "防假陰性" .-> LABELS
 ```
 
-**嚴重度階梯範例（ETH/TWII 議題實測）**
+**兩套階梯數字不要搞混**
+
+| 來源 | 門檻 | 說明 |
+|---|---|---|
+| **框架預設** | `-3% / -5% / -8%` | `path_labels.py` 的 `DEFAULT_SEVERITY_THRESHOLDS`（上圖 SEV 節點用的是這組） |
+| **ETH/TWII 議題覆寫** | `-5% / -7% / -10% / -12%` | 該議題事件較稀少，把門檻往深處拉才有區辨度（下表用的是這組） |
+
+> 階梯門檻是**每個議題自己選**的參數，不是全平台固定值。被問「為什麼你的階梯跟預設不一樣」，
+> 答：**門檻要選在事件數還夠算統計量、又能區分嚴重度的地方**，所以隨議題的事件分布調整。
+
+**嚴重度階梯範例（ETH/TWII 議題實測，全歷史 35 次事件）**
 
 | MAE 門檻 | Risk Ratio (相對 baseline) | 解讀 |
 |---|---|---|
 | ≤ −5% | 1.79× | 訊號亮燈時，跌幅超過 5% 的機率為 baseline 的 1.79 倍 |
-| ≤ −10% | 3.32× | 嚴重度放大 |
-| ≤ −12% | 3.87× | 嚴重度再放大（單調） |
+| ≤ −7% | 2.36× | 嚴重度放大 |
+| ≤ −10% | 3.32× | 再放大 |
+| ≤ −12% | 3.87× | 再放大（單調） |
 
 階梯單調放大 = 訊號不是只抓到淺跌，而是「越嚴重越準」；若階梯反轉，代表訊號只在淺跌有效，實戰價值低。
+
+> **配套要一起講的節制**：`probability_lift` 的 bootstrap 95% CI 是 `[-0.0005, +0.3443]`——
+> **下界僅微幅低於 0**。所以正確說法是「階梯形狀像真訊號，但區間估計還壓不到 0 以上」，
+> 不能只報 3.87× 就說有效。
 
 ---
 
@@ -232,12 +291,25 @@ flowchart TB
     GATE["Signal Gate<br/>OOS coverage · 近期觸發 · lift 門檻 · FDR 門檻<br/>→ 候選訊號排序表"]:::gate
 
     SIGNALS --> SPLIT
+    SIGNALS --> INDEP
+    SIGNALS --> BOOT
+    SIGNALS --> SIGTEST
     INDEX --> SPLIT
-    SPLIT --> INDEP
-    INDEP --> BOOT
-    BOOT --> SIGTEST
+
+    SPLIT --> GATE
+    INDEP --> GATE
+    BOOT --> GATE
     SIGTEST --> GATE
+
+    NEFF -. "n_eff 太小 → p 值視為上界" .-> SIGTEST
+    EID -. "波次分群餵給 block" .-> EBB
 ```
+
+> **讀圖注意**：四組工具是**並聯的四道獨立檢核**（各回答一個常被寫錯的問題），
+> 不是「必須依序跑完的管線」。唯一的兩條依賴是虛線標的那兩條：
+> `episode_ids` 的波次分群是 `episode_block_bootstrap` 的輸入；
+> `n_eff` 太小時顯著性檢定的 p 值只能當**上界**解讀。
+> 之前把它畫成一條直鏈，容易被誤讀成「bootstrap 一定要在 walk-forward 之後」——實際互不相依。
 
 **四組工具對照**
 
@@ -247,6 +319,24 @@ flowchart TB
 | `episode_ids` / `n_eff` | 這些事件其實擠在幾波行情裡？ | 把 30 個事件當 30 個獨立樣本 → p 值樂觀上界 |
 | `episode_block_bootstrap` | 以「波」為單位重抽 | 以「筆」為單位重抽 → 假顯著 |
 | `probability_lift` / `fisher_lift_test` / `bh_fdr` | 訊號亮燈時事件率高多少？是不是運氣？測很多組要扣多少？ | 沒做 FDR 校正 → 偽發現 |
+
+### 五.1 前視偏差的第五道防線：機械化偵測
+
+前面四組是**統計**防線。但「程式碼裡不小心用到未來資料」是**工程**問題，靠 code review 抓不完。
+所以另有一個獨立工具：`core/package/data_leakage_detection/`。
+
+作法是**兩階段驗證**（`market-risk/CLAUDE.md` 明載「風險模型上線前**必跑**」）：
+
+| 階段 | 做什麼 | 實作 |
+|---|---|---|
+| **靜態掃描** | 掃出可疑呼叫（`shift(-N)`、`bfill`、`center=True`、全期統計量）| 白名單只有 `path_labels.py`——label 計算層是唯一允許看未來的地方 |
+| **動態時間一致性測試** | 把資料源 monkeypatch 成「只到某個截止日」，重算指標，**比對兩次結果的重疊區間是否一致** | `check_future_data_leakage(df_earlier, df_later)` + `_create_patched_get` / `_create_patched_indicator` |
+
+第二階段是關鍵：**如果一個指標沒有偷看未來，那麼把資料截短之後，重疊期間的值必須完全相同。**
+值變了就代表有洩漏——這個檢測不需要你看得懂那段程式在算什麼。
+
+> 面試講法：「防前視偏差我不只靠規則和 review，我有一個**可以跑的測試**——
+> 截短資料重算，重疊區間不一致就是洩漏。這比人眼看 `shift` 可靠。」
 
 ---
 
@@ -307,8 +397,18 @@ flowchart TB
 | Label | TWII 未來 20 日 MAE ≤ 門檻（嚴重度階梯 −5% / −10% / −12%） |
 | 雙市場 | TAIEX（^TWII）＋ OTC（^TWOII）＋ 倉儲 total return 報酬指數同步驗證 |
 | 評估 | precision、baseline event rate、risk ratio、frozen calibration、leave-one-out |
-| 結論 | **PIVOT**（檢力失敗，非證據失敗）— 事件數天花板 35 次，但方向不隨機；嚴重度階梯單調放大 |
+| **樣本規模** | **全歷史獨立事件 35 次**（物理天花板）；**OOS 驗證期（2023-01~2024-12，2 年）內只有 4 個獨立事件** |
+| 結論 | **PIVOT**（檢力失敗，非證據失敗）— 方向不隨機、嚴重度階梯單調放大，但 lift 的 bootstrap CI 下界仍微幅低於 0 |
+| 回測狀態 | ⚠️ **未跑 vectorbt 實戰回測**——依議題規範，vectorbt 對帳是 KEEP 前的關卡；本議題判 PIVOT 而**止步於 gate**，所以沒有扣成本後的結論 |
 | 正當用法 | 不安裝為自動交易訊號；保留為**人工減碼 overlay 警示參考**（intensity > 0.20） |
+
+> **兩個數字不要講錯**（這題最容易自曝）：
+> - **35** = 全歷史獨立事件數上限，是「這個議題最多只能拿到這麼多樣本」的物理限制
+> - **4** = OOS 期間的獨立事件數，**這才是檢力不足的真正原因**——2 年的期間長度看起來夠，
+>   但事件只有 4 個。「期間夠長」不等於「樣本夠多」，這正是 `n_eff` 要解決的問題
+>
+> 所以：**35 不是 `n_eff`**。被問「你的有效獨立觀測數是多少」，答的是事件層級的獨立事件數（OOS 4 個），
+> 不是總天數、也不是 35。
 
 > 「PIVOT」不是「訊號無效」，而是「樣本不足以統計顯著」——方向性存在但檢力不足。下游 Pack D 策略可在此前提下評估策略增量，**不對 Pack A 判定背書**。
 

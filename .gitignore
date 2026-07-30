@@ -1,0 +1,25 @@
+# 執行日誌（不進 repo——會洩漏容器路徑、API login 訊息與 notebook 名稱）
+*.log
+_run_*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# 環境與憑證
+.env
+.env.*
+*.key
+*.pem
+
+# 作業系統
+.DS_Store
+Thumbs.db
+
+# 編輯器
+.vscode/
+.idea/
+
+# Obsidian 個人工作區狀態（保留 vault 設定，排除本機視窗狀態）
+.obsidian/workspace.json

@@ -2,7 +2,7 @@
 
 ## 專案概述
 
-一個支援 **7 種資料源、近百張資料表、PB 級歷史資料**的統一金融資料倉儲，設計核心是「**資料完整性優先於一切**」——任何下載、補檔、寫入操作都必須通過嚴格的缺口審計與多源校驗。
+一個支援 **8 種資料源（含韓股 KRX）、百萬級歷史 K 線**的統一金融資料倉儲，設計核心是「**資料完整性優先於一切**」——任何下載、補檔、寫入操作都必須通過嚴格的缺口審計與多源校驗。
 
 ### 為什麼需要這套系統？
 
@@ -19,31 +19,70 @@
 | 資料源 | 用途 | 配額 / 限制 |
 |---|---|---|
 | **FinMind** | 台股 / 美股 / 期權主力 | Sponsor Pro, 20,000 req/hr |
-| **FinLab** | 台股基本面 + FinLab US 美股公司資料 | API Key |
+| **FinLab** | 台股基本面 + FinLab US 美股公司資料 | 付費帳戶（無限制） |
 | **yfinance** | 美股股價 + 深度基本面 | 53 API |
-| **Binance** | 加密貨幣 OHLCV（前 10 大幣） | Public API |
-| **FRED / EIA** | 總經指標 / 原油 | Public |
-| **CFTC** | 期貨持倉 | Public |
-| **J-Quants** | 日股（**已暫停**） | Registry 保留 |
+| **Binance** | 加密貨幣 OHLCV（前 10 大幣） | 2,400 weight/min（獨立配額） |
+| **Macro 群組** | FRED / EIA 總經與原油、CFTC 期貨持倉、**US Congress 議員交易**、**CNN Fear & Greed**、crypto F&G、黃金、公債殖利率 | Public |
+| **KRX（韓股）** | Pykrx + FinanceDataReader + Naver Finance 三源組合 | 見 §四.1 |
+| **J-Quants** | 日股（**已暫停**） | Registry 保留、無 worker |
+
+> **口徑說明**：`SOURCE_CONFIG`（`bulk_downloader/constants.py`）以「**進程隔離單位**」分 6 組
+> （`finmind` / `jquants` / `binance` / `macro` / `yfinance` / `krx`），CFTC、FRED、EIA、Congress、CNN
+> 都掛在 `macro` 群組下共用一個限速器。所以「幾種資料源」取決於怎麼數——
+> **被追問時答「6 個獨立限速群組、8 個對外資料供應方」**，不要含糊。
 
 > 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第六節**。
+
+> 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
 
 ---
 
 ## 一、整體架構（多源攝取 → 倉儲 → 審計）
 
+### 1.0 白板版（被要求「畫一下倉儲架構」時畫這張）
+
+> 6 個框。口訣：**水位線發現缺口 → 缺口變任務 → daemon 補 → 每日審計確認無缺。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
+flowchart LR
+    SRC["8 個資料源<br/>(6 個限速群組)"]
+    GAP["Watermark<br/>+ Gap Calculator"]
+    Q[("Redis ZSET<br/>任務佇列")]
+    D["Bulk Downloader<br/>daemon"]
+    WH[("Parquet 倉儲<br/>+ SQLite metadata")]
+    AUDIT["每日審計<br/>→ Discord 告警"]
+
+    SRC --> D
+    GAP --> Q --> D --> WH
+    WH --> GAP
+    WH --> AUDIT
+    AUDIT -. "發現缺口回填" .-> Q
+
+    classDef src fill:#fff4d6,stroke:#5c4500,stroke-width:2px,color:#5c4500;
+    classDef flow fill:#d6e8ff,stroke:#002b66,stroke-width:2px,color:#002b66;
+    classDef store fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    classDef audit fill:#ffd6d6,stroke:#6b0000,stroke-width:2px,color:#6b0000;
+    class SRC src;
+    class GAP,Q,D flow;
+    class WH store;
+    class AUDIT audit;
+```
+
+### 1.1 細節版
+
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','secondaryColor':'#e0e0e0','tertiaryColor':'#f0f0f0','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
 flowchart TD
-    subgraph SOURCES["資料源層 (7 種)"]
+    subgraph SOURCES["資料源層 (8 個供應方 / 6 個限速群組)"]
         direction LR
         SRC1["FinMind<br/>台股/美股/期權"]
-        SRC2["FinLab<br/>台股基本面"]
+        SRC2["FinLab + FinLab US<br/>台股基本面 / 美股公司"]
         SRC3["yfinance<br/>美股價量"]
-        SRC4["FinLab US<br/>美股公司資料"]
-        SRC5["Binance<br/>加密貨幣"]
-        SRC6["FRED/EIA<br/>總經"]
-        SRC7["CFTC<br/>期貨持倉"]
+        SRC4["Binance<br/>加密貨幣"]
+        SRC5["Macro 群組<br/>FRED · EIA · CFTC<br/>Congress · CNN F&G"]
+        SRC6["KRX 韓股<br/>Pykrx + FDR + Naver"]
+        SRC7["J-Quants<br/>日股 (已暫停)"]
     end
 
     SOURCES --> LOADERS
@@ -54,8 +93,8 @@ flowchart TD
         L2["FinLab Loader"]
         L3["yfinance Loader"]
         L4["Binance Loader"]
-        L5["Macro Loader"]
-        L6["CFTC Loader"]
+        L5["Macro Loader<br/>(含 CFTC / Congress)"]
+        L6["KRX Loader<br/>(三源組合)"]
     end
 
     LOADERS --> QUEUE
@@ -193,6 +232,27 @@ flowchart TD
 | **ZSET 排序** | 用時間戳當 score，舊任務自動排前面，補缺比新資料優先 |
 | **Schema Validator** | API 偶爾會回不完整 JSON，必須在寫入前擋下，避免污染 Parquet |
 | **Dedup Key 鐵律** | `全部非 float64 欄 + strike_price`（曾因只用 `(id, date)` 靜默損毀 99% 籌碼資料） |
+| **配額安全鐵律** | 見下方——**慢補是常態，不是要修的效能問題** |
+
+### 配額安全鐵律（生產紀律，比架構圖更值得講）
+
+寫成規則檔 `.claude/rules/finmind-throughput-safety.md`，內容是一條禁令：
+
+> **絕不可為了加速補 backlog 而調高 `--max-workers` / `--rate-limit` 去佔滿配額**——
+> 持續飽和會觸發停權 / IP ban。**finmind 慢補是常態，不是要修的效能問題。**
+
+為什麼這條要寫死成規則而不是靠自覺：backlog 積壓時「加大並行」是最直覺的動作，
+而懲罰（IP ban）延遲發生、且會**同時打掉所有資料源的當日更新**。所以：
+
+| 機制 | 內容 |
+|---|---|
+| `IP_BAN_COOLDOWN_SECONDS = 2100` | 35 分鐘（FinMind ban 30 分 + 5 分緩衝），寫死在 `constants.py` |
+| **每源獨立 worker 數與限速** | `finmind` 4 workers / 20,000 req-hr；`krx` 只給 2 workers（Naver 軟限流 ~2 req/s）|
+| **ADR-012 進程生命週期** | supervisord 持有 `worker-{finmind,binance,yfinance,macro}`，`--daemon --max-runtime 86400` + autorestart |
+| **n8n 只負責 enqueue** | `POST /api/warehouse/update?source=X` 是 **enqueue-only**——排程器不直接下載，避免排程重疊變成並行放大 |
+| **吞吐量測方法** | 用 ≥60–90 秒穩態窗口兩點取樣，不用單次短快照（否則會誤判吞吐而想「優化」）|
+
+> 面試可以這樣收尾：「這條規則的價值不在技術，在於**它把一個延遲懲罰的錯誤變成當下就過不了的規則**。」
 
 ---
 
@@ -342,11 +402,42 @@ flowchart TD
 
 ---
 
+## 四.1、韓股 KRX：用三個開源套件組出一個資料源
+
+> **這題被問到時的定位要先講清楚**：不是「破解付費牆」，而是「**KRX 官方 Open API 不提供的欄位，
+> 用三個各自合法的公開來源拼出量化需要的覆蓋**」。
+
+KRX（韓國交易所）的完整資料要會員資格，但量化研究需要的三塊各有公開替代路徑：
+
+| 來源 | 拿什麼 | 為什麼用它 |
+|---|---|---|
+| **FinanceDataReader (FDR)** | 全市場清單 / OHLCV | 套件維護者自行維護 GitHub cache，使用者匿名讀取公開 cache |
+| **Naver Finance** | 籌碼面（外資買賣超、外資持股比） | 公開網頁資料，HTML 解析 |
+| **pykrx** | 衍生品 28 類別 metadata | KRX Open API 不含衍生品 OHLCV，只能取 metadata |
+
+實作落點（`bulk_downloader/registry.py` 的 `_PHASE12_KRX_APIS`，4 支 API）：
+
+| API | 內容 | 寫入策略 |
+|---|---|---|
+| `krx_universe` | 韓股全市場清單（KOSPI / KOSDAQ / KONEX） | `replace` |
+| `krx_investor_trend` | 投資人買賣超 | append |
+| `krx_foreign_ownership` | 外資持股比 | append |
+| `krx_future_universe` | 衍生品 28 類別 metadata | replace |
+
+決策紀錄：`datawarehouse/docs/decisions/ADR-013-韓股資料源-Pykrx-整合.md`。
+排程器測試：`tests/test_scheduler_krx_no_param.py`。
+
+> **講法建議**（briefing 也有列為地雷）：強調「用開源 cache 套件 + 公開網頁資料」，
+> 不要把「繞過會員牆」講成功勞。被問合規就答：**都是公開端點，沒有帳號共用、沒有反爬對抗，
+> 且限速壓到 2 workers / 1800 req-hr 比對方的軟限流更保守。**
+
+---
+
 ## 五、技術棧
 
 | 領域 | 套件 / 服務 |
 |---|---|
-| 資料源 API | FinMind (Sponsor Pro) / FinLab / yfinance / Binance / FRED / EIA / CFTC / J-Quants |
+| 資料源 API | FinMind (Sponsor Pro) / FinLab / yfinance / Binance / FRED / EIA / CFTC / US Congress / CNN F&G / Pykrx + FinanceDataReader + Naver Finance / J-Quants（已暫停）|
 | 列式儲存 | **Apache Parquet** (via PyArrow) |
 | SQL 引擎 | **DuckDB** (查詢 Parquet) |
 | 任務佇列 | **Redis ZSET** (時間排序) |

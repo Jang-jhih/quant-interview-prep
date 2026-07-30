@@ -21,9 +21,38 @@
 | **每日入口** | n8n trigger `/api/research/run_daily/industry_rotation_risk` → `scripts/run_daily.py` |
 | **下游通知** | Discord webhook（4 色：綠 / 黃 / 橘 / 紅）+ Plotly gauge PNG + UI snapshot |
 
+> 📖 **讀法**：想快速理解看 **§2.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
+
 ---
 
 ## 二、整體 Pipeline（cmoney → indicator → score → Discord）
+
+### 2.0 白板版
+
+> 5 個框。口訣：**集團日報酬 → 兩條指標（輪動多亂 / 主線多穩）→ Z-score → 四個觸發加總 → 1-5 分。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','fontSize':'14px'}}}%%
+flowchart LR
+    G["cmoney 37 集團<br/>等權日報酬"]
+    R["rotation_intensity<br/>(越高越亂)"]
+    T["theme_strength<br/>(越低越沒主線)"]
+    Z["252d Z-score<br/>min_periods=60"]
+    S["risk_score 1-5<br/>4 個觸發加總"]
+
+    G --> R --> Z
+    G --> T --> Z
+    Z --> S
+
+    classDef src fill:#d6e8ff,stroke:#002b66,stroke-width:2px,color:#002b66;
+    classDef calc fill:#e1f5e1,stroke:#145a14,stroke-width:2px,color:#145a14;
+    classDef out fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    class G src;
+    class R,T,Z calc;
+    class S out;
+```
+
+### 2.1 細節版
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','secondaryColor':'#f4f4f4','fontSize':'14px'}}}%%
@@ -308,6 +337,24 @@ flowchart TB
 
 → 兩個版本各過一個 gate，沒有任何候選能同時滿足——這就是「真實研究中 gate 互相拉扯」的教科書案例。
 
+### 🚨 這張圖有一個必須自己先講清楚的前提
+
+上圖 v1–v12 的 `state_icc` **全部是用 `theme_strength` 當 state variable 算出來的**，
+而 `theme_strength` 本身就出現在 score 公式裡（見 §七 circular trap）。所以：
+
+| | 結論 |
+|---|---|
+| **絕對值** | **不可信**。v1 的 0.3585 換成真正外部的 `twii_vol` 重算只有 **0.038** |
+| **相對排序** | **仍然有效**。12 輪用的是**同一個**（有偏但一致的）評估函數，所以「v2 比 v1 差」這種比較沒有失效 |
+| **「v1 是 Pareto 最優」** | 成立，但語意要限縮成「**在這個內部一致性指標下**，v1 位於邊界」，不是「v1 有 0.36 的外部解釋力」 |
+| **外部效力怎麼證** | 另立驗證：8 個台股寬度指標（`scripts/breadth.py`，n=481，8/8 跨期同向，最高 ρ=−0.40）——見 §七 |
+
+> **被追問時的答法**：「12 輪的 icc 都是同一個 circular 指標，所以我用它做**排序**、不用它做**宣稱**。
+> 絕對效力我另外用外部寬度指標驗，那組才是我對外的證據。」
+>
+> ⚠️ 反過來說：**如果對方先問「你的 0.36 是怎麼算的」，就代表他已經看出來了**——
+> 這時候要直接承認並馬上接到外部驗證，不要試圖辯護那個數字。
+
 **v1 LOCK 後續狀態（2026-07-01）**
 
 - 評估基準日：2026-07-01
@@ -318,7 +365,13 @@ flowchart TB
 
 ## 七、Pack C 驗證閘門 + 外部寬度驗證
 
-> Pack C gate 來源是 `scripts/autoresearch_v2.py:241-249`——**注意 README 跟實際 gate 數字不一致**（README 寫 sign_flip ≤30% / lag1 ∈ [0.40, 0.85]，實際是 ≤5% / [0.55, 0.85]）。
+> Pack C gate 來源是 `scripts/autoresearch_v2.py`（gate dict 約 L243-249）——**注意 README 跟實際 gate 數字不一致**（README 寫 sign_flip ≤30% / lag1 ∈ [0.40, 0.85]，實際是 ≤5% / [0.55, 0.85]）。**以程式碼為準**，這是 README 未同步的舊版門檻。
+
+> **實際 gate（已逐行核對 `autoresearch_v2.py`）**：
+> `state_icc_ge_0.30`（≥0.30）、`sign_flip_le_0.05`（≤0.05）、`lag1_in_range`（0.55–0.85）、
+> `extreme_in_range`（0.01–0.20）、`switch_le_12`（≤12）；
+> **KEEP 規則 = `gate_pass >= 3` AND `state_icc_ge_0.30`**——icc 是必要條件，其餘湊 3 個即可。
+> 這也解釋了為什麼 v1 的 `switch_per_Q=22.62` 超標卻仍 KEEP（見下方地雷）。
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','secondaryColor':'#f4f4f4','fontSize':'14px'}}}%%

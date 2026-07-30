@@ -16,9 +16,38 @@
 | **目標狀態變數** | TAIEX 20d rvol、OTC 20d rvol、TAIEX 5d MDD、OTC 5d MDD（雙市場對照）                                                  |     |     |
 | **每日排程**   | n8n「FinGPT Daily Update」22:30 TST（Asia/Taipei）                                                              |     |     |
 
+> 📖 **讀法**：想快速理解看 **§2.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
+
 ---
 
 ## 二、整體資料鏈（cnyes → LLM → warehouse → indicator → dashboard）
+
+### 2.0 白板版
+
+> 5 個框。口訣：**新聞 → LLM 打分 → 每日截面標準化 → 只看過去的百分位 → 恐慌等級。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','fontSize':'14px'}}}%%
+flowchart LR
+    N["cnyes 新聞<br/>12 年"]
+    L["Llama-3-8B<br/>+ FinGPT LoRA"]
+    Z["每日截面 Z-score<br/>(消除大盤情緒漂移)"]
+    P["expanding percentile<br/>min_periods=60<br/>(只看過去)"]
+    O["panic_index_rank<br/>∈ [0, 1]"]
+
+    N --> L --> Z --> P --> O
+
+    classDef src fill:#d6e8ff,stroke:#002b66,stroke-width:2px,color:#002b66;
+    classDef model fill:#ffe1e1,stroke:#7a0000,stroke-width:2px,color:#7a0000;
+    classDef calc fill:#e1f5e1,stroke:#145a14,stroke-width:2px,color:#145a14;
+    classDef out fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    class N src;
+    class L model;
+    class Z,P calc;
+    class O out;
+```
+
+### 2.1 細節版
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','secondaryColor':'#f4f4f4','fontSize':'14px'}}}%%
@@ -272,7 +301,30 @@ flowchart TB
 
 ## 七、兩次 Pivot 故事（誠實修正紀錄）
 
-> 2026-07-14 跟 2026-07-15 連續兩天因為實測結果與 README 宣稱不一致而做出**主動 pivot + README 修正**——是面試時展示「誠實揭露 vs 行銷包裝」差異的最佳案例。
+> 2026-07-14 跟 2026-07-15 連續兩天做出**主動 pivot + README 修正**。
+> 這**不是兩個獨立事件，是一條因果鏈**——第二天推翻的正是第一天決策所依據的前提。
+> 講的時候一定要串起來，這才是這個故事真正的價值。
+
+### 七.0 一定要先講對的版本（三段式）
+
+很多人會把這故事講成「IC/IR 退化 → 訊號變差 → 降格」。**這樣講會被自己的 repo 打臉**
+（`plan.md:35`、`notes/brainstorming.md:27-28`、`versions/v0_aux_pivot/README.md:12`、
+`docs/ai-context/progress.md:22` 四份文件都寫了同一句結論）。正確版本是：
+
+| # | 階段 | 內容 |
+|---|---|---|
+| **1** | **看到疑似退化** | 實測 OOS IC=0.0296 / IR=0.2599，對比 README 記載的 0.0360 / 0.3134 → 表面退化 17~18% |
+| **2** | **追查後推翻自己的退化結論** | 分析確認 **90% 屬 baseline drift，不是訊號崩壞**——0.0296 是「50 天 OOS + 18 個月 hold-out」的**混合基準**，README 的 0.0360 來自另一個時間點，**兩個數字根本不同基準，不可比** |
+| **3** | **真正的降格理由是契約，不是績效** | 既然不是訊號壞掉，就不能用「效果變差」當理由。真正卡點是：`top_risk` 軸契約要求 **OOS ≥ 1 年**，而當時只有 50 天 → **結構上無法滿足契約** → 改掛 `auxiliary_signal` 軸（不宣稱方向，只描述環境）|
+| **4** | **隔天發現步驟 3 的前提也是錯的** | 「只有 50 天」的原因被寫成「FinGPT 模型 2024 才部署、無法往前補」。實查 warehouse：**2015~2026 共 12 年、4141 天、~2900 檔**。真正的限制只是 `expanding(min_periods=60)` 啟動門檻 + 發佈時間 → README 全面改寫，子議題 [`fingpt_panic_rebound`](./fingpt_panic_rebound.md) 用全歷史重跑，**結果拿到 IS+OOS 雙 KEEP** |
+
+**為什麼這個版本更強**：它展示的不是「我很誠實地承認訊號變差」，
+而是「**我連自己的負面結論都再驗證一次，發現連降格的理由都寫錯了**」——
+而且修正之後，同一份資料在正確的軸上真的做出了有效訊號。
+
+> **一句話收尾**：「這題我錯了兩次——第一次錯在把 baseline drift 當訊號退化，
+> 第二次錯在把啟動門檻當物理上限。兩次都是我自己查出來並改掉的，
+> 而且改對之後這份資料在 `bottom_dip` 軸上拿到了雙 KEEP。」
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#666666','lineColor':'#444444','secondaryColor':'#f4f4f4','fontSize':'14px'}}}%%
@@ -285,11 +337,13 @@ flowchart LR
     subgraph P1["2026-07-14 · 軸 Pivot"]
         direction TB
         BEFORE1["原軸: top_risk/<br/>宣稱 P(down) 預測<br/>README IC=0.0360 IR=0.3134"]:::baseline
-        TEST1["實測 OOS<br/>IC=0.0296  IR=0.2599<br/>(退化 -18% / -17%)"]:::pivot
-        DECIDE1{"方向預測力<br/>不夠強？"}:::pivot
+        TEST1["實測 OOS<br/>IC=0.0296  IR=0.2599<br/>(表面退化 -18% / -17%)"]:::pivot
+        DIAG1["🔍 追查基準<br/>0.0296 = 50d OOS + 18m hold-out 混合<br/>0.0360 = 另一時間點<br/>→ 90% 是 baseline drift<br/>不是訊號崩壞"]:::fix
+        DECIDE1{"既然不是訊號壞<br/>那卡在哪？"}:::pivot
+        REASON1["真因: 軸契約要 OOS ≥ 1y<br/>當時只有 50 天<br/>→ 結構上無法滿足"]:::pivot
         ACT1["決議改軸<br/>top_risk/ → auxiliary_signal/<br/>從 P(down) 改為環境描述器"]:::fix
         CODE1["code impact:<br/>1. validate_risk_indicator.py 保留為歷史<br/>2. 新增 validate_auxiliary_signal.py<br/>3. 新增 versions/v0_aux_pivot/{README,replicate.py}<br/>4. risk_dashboard.ipynb:24-53 殘留舊表"]:::lesson
-        BEFORE1 --> TEST1 --> DECIDE1 --> ACT1 --> CODE1
+        BEFORE1 --> TEST1 --> DIAG1 --> DECIDE1 --> REASON1 --> ACT1 --> CODE1
     end
 
     subgraph P2["2026-07-15 · README 修正"]
@@ -298,13 +352,16 @@ flowchart LR
         FIND["實際查 warehouse:<br/>fingpt_stock_sentiment/_market/<br/>2015 ~ 2026-07-09<br/>12 年 ~2900 檔 ~290 萬筆"]:::pivot
         DECIDE2{"README 寫錯了？"}:::pivot
         ACT2["README 全面改寫<br/>(line 20-30 標示 '修正')<br/>列出 4141 天 panic_index_rank<br/>IS:2015-2022 / OOS:2023-2024 / Hold:2025+"]:::fix
-        LIMIT["真正限制: expanding(min_periods=60)<br/>啟動門檻 → history.csv 起點 2024-11-13<br/>(不是物理上限)<br/>子議題 fingpt_panic_rebound 已重跑全歷史"]:::lesson
-        BEFORE2 --> FIND --> DECIDE2 --> ACT2 --> LIMIT
+        LIMIT["真正限制: expanding(min_periods=60)<br/>啟動門檻 → history.csv 起點 2024-11-13<br/>(不是物理上限)<br/>→ 推翻 07-14 降格所依據的前提"]:::lesson
+        WIN["子議題 fingpt_panic_rebound<br/>用全歷史 4141 天重跑<br/>→ IS + OOS 雙 KEEP"]:::fix
+        BEFORE2 --> FIND --> DECIDE2 --> ACT2 --> LIMIT --> WIN
     end
 
+    CODE1 -. "隔天發現前提有誤" .-> BEFORE2
+
     class BEFORE1,BEFORE2 baseline
-    class TEST1,DECIDE1,FIND,DECIDE2 pivot
-    class ACT1,ACT2 fix
+    class TEST1,DECIDE1,FIND,DECIDE2,REASON1 pivot
+    class ACT1,ACT2,DIAG1,WIN fix
     class CODE1,LIMIT lesson
 ```
 
@@ -312,8 +369,33 @@ flowchart LR
 
 | 日期 | 觸發 | 行動 | 展示的特質 |
 |---|---|---|---|
-| **2026-07-14** | 實測 IC/IR 退化 17-18% | **主動降格**（從方向預測改為環境描述）| 不為了表面好看而護航失效假設 |
-| **2026-07-15** | 發現 README 與 warehouse 事實不符 | **公開修正** + 明確列出物理上限 vs 啟動門檻的差異 | 區分「物理不可能」與「契約選擇」的習慣 |
+| **2026-07-14** | 表面 IC/IR 退化 17-18% | 先**推翻自己的退化結論**（確認 90% 是 baseline drift），再以「軸契約 OOS 不足 1 年」為理由降格 | 不拿「效果變差」當方便的理由；負面結論也要驗證 |
+| **2026-07-15** | 發現降格理由的前提（「模型 2024 才部署」）與 warehouse 事實不符 | **公開修正 README**，釘死「物理上限」vs「啟動門檻」的差別 | 區分「物理不可能」與「契約選擇」的習慣 |
+| **後續** | 用修正後的全歷史重跑 | 子議題 [`fingpt_panic_rebound`](./fingpt_panic_rebound.md) 取得 **IS+OOS 雙 KEEP** | 修正不是為了認錯，是為了拿回被錯誤前提擋掉的結果 |
+
+---
+
+## 七.1、已知技術債（被問「跑得起來嗎」要先知道）
+
+模組有 `KNOWN_ISSUES.md`，記載**3 個 pytest 失敗 + 17 個 skipped**。
+面試若對方要求「現場跑一下測試」，**不能被這個嚇到**——要能主動說明：
+
+| # | 失敗測試 | 原因 | 性質 |
+|---|---|---|---|
+| 1 | `test_min_periods_constraint` | rank 函式邊界處理：`min_periods` 應為 `min(20, len)` 才正確 | 測試與實作對 `min_periods` 語意理解不一致 |
+| 2 | `test_get_time_series_structure` | 產出欄位已改名 `sentiment_volatility` → `volatility`，測試還期待舊名 | **測試沒跟上重構** |
+| 3 | `test_ic_calculation_consistency` | IC 計算迴圈對 scalar 做索引 → `IndexError` | 舊路徑的殘留（該軸已不用方向 IC）|
+| — | 17 個 skipped（`test_ic_monitor.py`）| 測試內部 `pytest.skip('ic_monitor.py 尚未實作')`，但該檔實際存在且可 import → 應是期待某個未實作方法 | skip 條件過期 |
+
+**標準答法**：「這 3 個是 pre-existing 失敗，記在 `KNOWN_ISSUES.md`，
+性質是**測試沒跟上重構**跟**舊 IC 路徑殘留**，不是指標算錯——
+指標本身的正確性由 `validate_auxiliary_signal.py` 的 Pack C 驗證與 notebook 的 Restart + Run All 保證。
+處置原則是**修之前先補對應單測**，避免邊修邊退化。」
+
+> ⚠️ **不要說「測試都是綠的」**。briefing 共通問答提到「用 pytest 驗證」，
+> 如果對方追問就會撞到這裡——主動說明反而是加分項。
+> 對照組：姊妹議題 [`fingpt_panic_rebound`](./fingpt_panic_rebound.md) 的測試是 **61 passed 全綠**，
+> 可以拿來說明「新寫的議題有把測試紀律補上」。
 
 ---
 

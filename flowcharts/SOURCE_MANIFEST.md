@@ -1,6 +1,9 @@
 # 流程圖目錄與原始碼對照（Source Manifest）
 
-> **用途**：本目錄記錄 `docs/flowcharts/` 下每份流程圖文件實際參考的程式碼路徑，方便追溯每張圖的依據來源。
+> **用途**：本目錄記錄 `flowcharts/` 下每份流程圖文件實際參考的程式碼路徑，方便追溯每張圖的依據來源。
+>
+> **數字口徑**：所有可被機械驗證的數字（workflow 數、router 數、資料源、gate 門檻、事件數…）
+> 以 [`_FACTS.md`](./_FACTS.md) 為唯一來源；本檔只記路徑，不重複記數字。
 >
 > **路徑標記**：
 > - 🏠 host 路徑（`/home/user/Desktop/Plutus/...`）= 你本機看到的路徑
@@ -26,6 +29,9 @@
 | 5 | [`market_risk.md`](./market_risk.md) | 事件型市場風險評估研究平台 | `market-risk/` |
 | 5.1 | [`market_risk_studies/fingpt_risk.md`](./market_risk_studies/fingpt_risk.md) | FinGPT 恐慌指數環境監控（Pack C 子模組）| `market-risk/analyses/auxiliary_signal/fingpt_risk/` |
 | 5.2 | [`market_risk_studies/industry_rotation_risk.md`](./market_risk_studies/industry_rotation_risk.md) | 產業輪動風險監控（Pack C 子模組）| `market-risk/analyses/auxiliary_signal/industry_rotation_risk/` |
+| 5.3 | [`market_risk_studies/fingpt_panic_rebound.md`](./market_risk_studies/fingpt_panic_rebound.md) | **恐慌抄底訊號（Pack B，唯一 IS+OOS 雙 KEEP）**| `market-risk/analyses/bottom_dip/fingpt_panic_rebound/` |
+| 5.4 | [`market_risk_studies/leverage_guard_overlay.md`](./market_risk_studies/leverage_guard_overlay.md) | **槓桿守門 Overlay（Pack D，訊號→部位閉環）**| `market-risk/analyses/leverage_guard_overlay/` |
+| 6 | [`../backtest_reports/README.md`](../backtest_reports/README.md) | FinLab 策略回測報告（16 份 HTML）| `Finlab_/jupyter/strategy/`（Plutus 之外）|
 
 ---
 
@@ -35,7 +41,8 @@
 
 | 角色 | 路徑 | 內容 |
 |---|---|---|
-| 🎯 主來源 | 🏠 `/home/user/Desktop/Finlab_/jupyter/strategy/GA/deap/ga_yoy_v1.ipynb` 🐳 `/home/work/strategy/GA/deap/ga_yoy_v1.ipynb` | 整份流程圖的主要參照——DEAP Toolbox 建構、演化迴圈（400 代 × 70 個體）、適應度函式（10 指標加權）、IS/OOS 切分（60/40）、PBO 懲罰、YoY 加權持倉函式、checkpoint 機制全在此 notebook 內 |
+| 🎯 主來源（**策略端**） | 🏠 `/home/user/Desktop/Finlab_/jupyter/strategy/GA/deap/ga_yoy_v1.ipynb` 🐳 `/home/work/strategy/GA/deap/ga_yoy_v1.ipynb` | ⚠️ **只有 3 個 cell**：① import + `sys.path.append(os.environ['CONDITION_PATH'])` + `from GA_v3.main import main`；② `get_position()` 持倉函式（流動性 >1,500 萬 → YoY 加權 → `is_largest(10)` → `sim()`）；③ `config` dict（`population_size=70`、`ngen=400`、`num_cores=15`、`min_total_trade_count=200`、`min/max_num_features=4/8`、`validation_mode='IS_OOS'`、10 指標 `weights`）。**引擎不在這裡** |
+| 🎯 主來源（**引擎端**） | 🏠 `/home/user/Desktop/Finlab_/jupyter/strategy/pakage/GA_v3/`（`main.py`、`evaluate.py`、`score.py`、`validation.py`、`run_ga.py`、`process_data.py`、`message.py`） | **DEAP Toolbox 建構、400 代演化迴圈、適應度函式、IS/OOS 切分、PBO 懲罰、checkpoint 都在這個 package**，由 notebook 透過 `CONDITION_PATH` 環境變數載入。⚠️ **面試現場若要開檔展示演化邏輯，要開這裡，不是 notebook** |
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Finlab_/jupyter/strategy/GA/deap/` 同層其他 `ga_*.ipynb`（`ga_GVI_v2`、`ga_peg`、`ga_prg`）| 對照同系列 GA 策略變體，確認 DEAP 設定與 config 組裝慣例一致 |
 | 📚 框架參考 | `DEAP` 官方文件（外部）| 錦標賽選擇 `tournsize=3`、兩點交叉、位元翻轉變異 `indpb=0.05`、`HallOfFame`、`Logbook`、`Statistics` |
 | 📚 框架參考 | `finlab.backtest` `sim()` API | 回測引擎、`Report.stats` 績效指標鍵值 |
@@ -53,18 +60,19 @@
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/evolution-lab/AGENTS.md` | OpenCode 進入點 |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/openevolve/financial_evolution/` 🐳 `/home/work/evolution-lab/openevolve/financial_evolution/` | OpenEvolve 主引擎實作——LLM prompt 組裝、SEARCH/REPLACE Diff、沙盒執行、MAP-Elites 分箱、12 步驟演化迴圈 |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/shinka-evolve/` | ShinkaCompat (icir) 評分器——Alpha 軌 IC/ICIR + 去氣夏普比 DSR 計算；含 `factor_metadata.py`、`generate_metadata.py`、`initial.py` |
-| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/configs/modes/{alpha,condition,strategy}/*.yaml` | 三軌配置（quick/standard/full 強度）、`experiment_metadata` 欄位 |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/openevolve/financial_evolution/configs/modes/{alpha,condition,strategy}/*.yaml` | 三軌配置（quick/standard/full 強度）、`experiment_metadata` 欄位。⚠️ 注意路徑在 `openevolve/financial_evolution/` 底下，**不是** `evolution-lab/configs/` |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/openevolve/financial_evolution/src/configs/boolean_factor_config.yaml` | **LLM 配置**：MiniMax-M3 三個角色（主力生成 / 高溫探索 / 評估回饋），`api_base: https://api.minimax.io/v1` + `MINIMAX_API_KEY`（L16-56）|
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/shared/` | 共用組件（ResultsStore、資料源路由 SSOT、雲端 promote CLI）|
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/openfe/` | OpenFE 替代引擎（`main.py`、`openfe_utils.py`） |
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/evolution-lab/examples/`（`sample_alpha_factor.py`、`sample_boolean_factor.py`、`vif_*_example.py`）| 因子樣板與 VIF 共線性檢查範例 |
 | 🔍 歷史追溯 | 上一輪 explore session `ses_050d76799ffeySRjGHFutm0oqw`（background `bg_a67f3ea3`）| 當初 trace OpenEvolve financial_evolution loop 的調查紀錄 |
-| 🔗 下游消費 | 🏠 `/home/user/Desktop/Plutus/plutus_ui/`（Page 6 因子唯讀瀏覽器）| 演化結果的視覺化出口 |
+| 🔗 下游消費 | 🏠 `/home/user/Desktop/Plutus/plutus_ui/web/`（Next.js `/evolution` 路由，唯讀）| 演化結果的視覺化出口。⚠️ **不得**上架到 `web-public/`（見 `plutus_ui/CLAUDE.md` 公開站硬規則）|
 
 ---
 
 ## 3. `datawarehouse.md` — 多源金融資料倉儲系統
 
-> 7 種資料源（含已暫停 J-Quants）+ 韓股 KRX（Phase 12 已整合，流程圖尚未補入），Redis ZSET 任務佇列 + Watermark + Gap Calculator + 嚴格審計。
+> 8 個資料供應方 / 6 個限速群組（含已暫停 J-Quants + 韓股 KRX 三源組合），Redis ZSET 任務佇列 + Watermark + Gap Calculator + 嚴格審計 + 配額安全鐵律。
 
 | 角色 | 路徑 | 內容 |
 |---|---|---|
@@ -76,7 +84,8 @@
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/datawarehouse/src/{smart_loader,gap_calculator,lock_manager,cache_manager,metadata_store,data_loader,api_connector,source_policy,config}.py` | SmartLoader 查詢路徑、缺口計算、鎖管理、metadata DB |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/datawarehouse/src/{finmind_schema,finlab_schema,jquants_schema,finlab_registry,congress_loader,cftc_*,jquants_loader}.py` | 各資料源 schema 與 loader |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/datawarehouse/scripts/{cftc_download,verify_all_apis,verify_binance_warehouse,generate_incremental_tasks,rebuild_watermark_from_redis,rebuild_finlab_catalog,init_metadata,generate_schemas,cleanup_krx_redo_tasks,reset_krx_for_redownload}.py` | 審計/補檔/重置腳本 |
-| 📓 韓股 ADR | 🏠 `/home/user/Desktop/Plutus/datawarehouse/docs/decisions/ADR-013-韓股資料源-Pykrx-整合.md` | 三源組合（Pykrx + FinanceDataReader + Naver Finance）決策紀錄——⚠️ 流程圖尚未補入 KRX 節點 |
+| 📓 韓股 ADR | 🏠 `/home/user/Desktop/Plutus/datawarehouse/docs/decisions/ADR-013-韓股資料源-Pykrx-整合.md` | 三源組合（Pykrx + FinanceDataReader + Naver Finance）決策紀錄 → 已補入 `datawarehouse.md` §四.1 |
+| 📚 生產紀律 | 🏠 `/home/user/Desktop/Plutus/datawarehouse/.claude/rules/finmind-throughput-safety.md` + `CLAUDE.md`（L113-114、L138）| **配額安全鐵律**（禁為補 backlog 調高 workers/rate-limit）+ ADR-012 supervisord 進程生命週期 + n8n enqueue-only 分工 |
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/datawarehouse/tests/test_scheduler_krx_no_param.py` 等 | KRX 排程器測試（佐證韓股整合已落地）|
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/datawarehouse/docs/ai-context/{progress,technical-debt,project-structure}.md` | 子專案進度日誌與技術債追蹤 |
 | 🔗 下游消費 | research / evolution-lab / plutus_ui / market-risk | 倉儲 parquet 唯一合法讀者 |
@@ -85,20 +94,24 @@
 
 ## 4. `services.md` — 統一 AI 服務編排層
 
-> Hermes Agent Runtime（5 profile）+ n8n（39 workflow）+ data-api FastAPI + Streamlit Portal。
+> Hermes Agent Runtime（5 業務 profile）+ n8n（48 workflow）+ data-api FastAPI（9 router）+ Next.js Portal（內網站 / 對外站雙 app）。
 
 | 角色 | 路徑 | 內容 |
 |---|---|---|
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/CLAUDE.md`（子專案分層 §能力暴露層）| 雙層架構定義、services 子專案清單 |
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/services/CLAUDE.md` | 服務層入口規範 |
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/services/AGENTS.md` | 服務層 OpenCode 進入點 |
-| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/hermes/config.yaml` | Hermes 5 個 agent profile 設定——ops / steward / librarian / risk / quantix 的 model 對應（ops/steward→GLM-5.2；librarian/risk/quantix→MiniMax M3）|
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/hermes/config.yaml` | **全域** model 設定（`model.default: MiniMax-M3` / provider `minimax`；429 fallback `glm-4.5`）+ 5 個 profile 的 `agent.personalities` 人格描述 + kanban dispatcher（`orchestrator_profile`）。⚠️ **per-profile 的模型覆寫不在這裡** |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/hermes/README.md`（L107）| **維運類 profile（ops/steward）改用 `glm-5.2`** 的決策紀錄——zai provider、1M context、2026-07-03 切換、走 `.general_env` 的 `ZAI_API_KEY`。**這才是「ops/steward→GLM-5.2」的出處** |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/hermes/gateway-adapter/` | Hermes Adapter（FastAPI :18790），把 HTTP `/tools/invoke` 轉 Hermes CLI `chat -q` |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/hermes/{scripts,docker-compose.yml,CLAUDE.md,README.md}` | Hermes runtime 啟停、健康檢查、profile 維運 |
-| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/n8n/scripts/` + 🏠 `/home/user/Desktop/Plutus/services/n8n/data/` | n8n workflow 定義（hermes 19 / risk 15 / system 5 = 39 個）|
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/n8n/workflows/{hermes,risk,system}/` + 根層 `FinGPT_Daily_Update.json` | n8n workflow 定義。口徑見 [`_FACTS.md`](./_FACTS.md)；驗證指令 `find services/n8n/workflows -name '*.json' \| wc -l` |
 | 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/n8n/{CLAUDE.md,AGENTS.md,docs/}` | n8n 唯一業務自動化定位、workflow 分類規範 |
-| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/data-api/app/` + `scripts/` | FastAPI 9 個 router（active_etf / breadth / commentary / dw / evolution / research / risk / health）、5 個 reader、分級 cache TTL |
-| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/plutus_ui/`（⚠️ **root 層，不在 services/ 下**） | Streamlit Portal——DW 血緣、資料集探索、回測模組、爬蟲 hub |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/data-api/app/main.py`（L62-70）| **實際註冊的 9 個 router**：`health` / `dw` / `research` / `evolution` / `risk` / `commentary` / `active_etf` / `passive_etf` / `breadth`。⚠️ `app/routers/etf_bh_metrics.py` **存在但未註冊**；`commentary` 與 `research` 共用 `/api/research` prefix |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/services/data-api/app/readers/` | 5 個 reader：`warehouse_breadth` / `etf_snapshots` / `risk_snapshots` / `breadth_snapshots` / `ai_commentary`（全部唯讀）|
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/plutus_ui/`（⚠️ **root 層，不在 services/ 下**） | **Next.js Portal**（[ADR-003](../README.md) 定為唯一前端）：`web/` 內網站（Next 16 + React 19，走 data-api）＋ `web-public/` 對外站（Supabase build 時預取）。`modules/` 提供底層讀取邏輯供 data-api 使用 |
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/plutus_ui/CLAUDE.md` + `docs/decisions/ADR-003-migrate-to-react-platform.md` + `ADR-004-public-saas-publish-layer.md` | **內外網隔離硬規則**：`web-public/` 不得引用 data-api、不得有寫入型 route handler、不得出現 `service_role`；禁上架 `/ops` `/evolution` `/research-lab` `/quantix` `/chat` `/dw`；演算法細節與交易指示語彙不得離開內網 |
+| 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/plutus_ui/scripts/check-public-isolation.sh` | 公開路由白名單（`ALLOWED_ROUTES`）機械化把關，配合 `docs/public-scope.md` |
 | 🔍 輔助 | 🏠 `/home/user/Desktop/Plutus/services/poc/` | 證明概念區（非生產）|
 | 🔗 上游依賴 | datawarehouse / research / evolution-lab / core（唯讀依賴）| 服務層只暴露，不重新實作 |
 
@@ -110,7 +123,8 @@
 
 | 角色 | 路徑 | 內容 |
 |---|---|---|
-| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/CLAUDE.md` 🐳 `/home/work/market-risk/CLAUDE.md` | 子專案嚴格度、工作原則 #1–#10、六類評估契約、市場覆蓋規則、文件用途對照表 |
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/CLAUDE.md` 🐳 `/home/work/market-risk/CLAUDE.md` | 子專案嚴格度、工作原則 #1–#10、市場覆蓋規則、文件用途對照表。⚠️ **用語注意**：該檔 §「研究方法（**六類** + Skill 工作流）」講的是**研究方法論**（Event Study、因子研究…）；**評估契約是 Pack A/B/C/D 四類**（同檔 L598）。兩者是不同維度，被問到不要混答 |
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/core/package/data_leakage_detection/`（`detector.py`、`utils.py`、`examples.py`）| **前視偏差偵測工具**：`check_future_data_leakage(df_earlier, df_later)` + `_create_patched_get` / `_create_patched_indicator`（monkeypatch 限制資料期間後重算並比對）。`market-risk/CLAUDE.md` L302 明載「風險模型上線前**必跑**兩階段驗證（靜態掃描 + 動態時間一致性測試）」|
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/AGENTS.md` | 進入點 + Pre-Flight Checklist + skill 路由 |
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/.opencode/rules/risk-analysis-workflow.md` | `analyses/` 工作流——六類設計、Lookahead 禁止、版本迭代、抽取門檻 |
 | 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/.opencode/rules/folder-organization.md` | 兩層資料夾結構、Pack 對應、新任務分類決策樹 |
@@ -183,6 +197,20 @@
 
 | 流程圖 | 缺漏 | 已確認於何處 |
 |---|---|---|
-| `datawarehouse.md` | 韓股 KRX（Pykrx + FDR + Naver Finance 三源組合）尚未畫入 | `datawarehouse/src/bulk_downloader/registry.py:1701-1811`、`constants.py:85-138`、`docs/decisions/ADR-013-韓股資料源-Pykrx-整合.md` |
 | `market_risk.md`（Pack C）| `auxiliary_signal/` 其餘 5 個子模組尚未展開獨立 flowchart：`composite_aux_ensemble` / `concept_vol_decay` / `derivatives_chip_thermometer` / `no_leader_vol_breadth` / `vol_lead_indicators` | `market-risk/analyses/auxiliary_signal/` 各子目錄 README |
-| `market_risk.md`（analyses/）| `analyses/` 其他子模組尚未展開：`bottom_dip` / `eth_short_stock_picking` / `index_futures_derisk` / `leverage_guard_overlay` / `macro_regime_overlay` / `top_risk` / `top_risk_short_picking` / `形態學研究` / `系統性牛雄分析` | `market-risk/analyses/` 各子目錄 README |
+| `market_risk.md`（Pack A）| `top_risk/` 其餘子模組尚未展開：`composite_risk_ensemble` / `futures_chip_analysis`（E01/E02 訊號源）/ `high_beta_atr_risk` / `sector_margin_risk` / `svix_drawdown_predictor` / `high_price_strong_stock_impact` | `market-risk/analyses/top_risk/` 各子目錄 README |
+| `market_risk.md`（Pack B）| `bottom_dip/` 其餘子模組尚未展開：`composite_dip_ensemble` / `derivatives_chip_dip` / `large_cap_chip_dip` / `low_corr_industry_vol_dip` / `margin_cost_rebound` / `market_volatility` | `market-risk/analyses/bottom_dip/` 各子目錄 README |
+| `market_risk.md`（Pack D）| 其餘策略層議題尚未展開：`index_futures_derisk` / `macro_regime_overlay` / `eth_short_stock_picking` / `top_risk_short_picking` / `形態學研究` / `系統性牛雄分析` | `market-risk/analyses/` 各子目錄 README |
+| 全 repo | `research/`（`jp-tw-lead-lag`、`IC_study`、`factor-pipeline`、`feature-engineering`、`hyperparameters_tuning`、`intraday_analysis`、`quantevolve-research`）與 `core/` 尚未展開 | 見 [`../README.md`](../README.md) §九「未展開的研究資產」 |
+
+### 已修正的追溯錯誤（2026-07-30 全檔重驗）
+
+| 項目 | 原記載 | 實際 |
+|---|---|---|
+| GA 引擎位置 | 「全在 `ga_yoy_v1.ipynb` 內」 | notebook 只有 3 cell；引擎在 `Finlab_/jupyter/strategy/pakage/GA_v3/` |
+| evolution-lab 三軌配置 | `evolution-lab/configs/modes/` | `evolution-lab/openevolve/financial_evolution/configs/modes/` |
+| Hermes profile 模型對應 | `services/hermes/config.yaml` | config.yaml 只有全域 default；per-profile 覆寫記在 `services/hermes/README.md:107` |
+| data-api router 清單 | 8 個名稱（漏 `passive_etf`）| `main.py:62-70` 註冊 9 個；`etf_bh_metrics` 未註冊 |
+| plutus_ui 技術 | Streamlit Portal | Next.js（ADR-003），`web/` + `web-public/` 兩個 app |
+| n8n workflow 數 | 39（19/15/5）| 48（25/18/4 + 根層 1）|
+| KRX | 「尚未畫入」 | 已補入 `datawarehouse.md` §一圖與 §四.1 |

@@ -12,9 +12,38 @@
 
 > 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第八節**。
 
+> 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
+
 ---
 
 ## 一、整體架構
+
+### 1.0 白板版（被要求「畫一下 GA 怎麼跑」時畫這張）
+
+> 6 個框，一條回圈。口訣：**條件編碼成 0/1 → 轉持倉 → 回測 → 10 指標加權 → PBO 打折 → 選下一代。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
+flowchart LR
+    IND["個體 = 0/1 染色體<br/>(挑 4~8 個條件 AND)"]
+    POS["轉持倉<br/>流動性濾 + YoY 加權<br/>取前 10 檔"]
+    SIM["FinLab sim() 回測"]
+    FIT["10 指標加權<br/>(Calmar/MDD 各 0.6)"]
+    PBO["PBO 懲罰<br/>× (1 − PBO)"]
+    EVO["錦標賽選擇<br/>兩點交叉 + 位元翻轉"]
+
+    IND --> POS --> SIM --> FIT --> PBO --> EVO
+    EVO -- "下一代 (共 400 代 × 70 個體)" --> IND
+
+    classDef gene fill:#d6e8ff,stroke:#002b66,stroke-width:2px,color:#002b66;
+    classDef bt fill:#cfeecf,stroke:#1f4a1f,stroke-width:2px,color:#1f4a1f;
+    classDef guard fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    class IND,EVO gene;
+    class POS,SIM,FIT bt;
+    class PBO guard;
+```
+
+### 1.1 細節版
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','secondaryColor':'#e0e0e0','tertiaryColor':'#f0f0f0','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
@@ -220,8 +249,34 @@ flowchart TD
 | 演化代數 | 400 | 收斂世代上限 |
 | 平行核心 | 15 | 多進程 Pool 大小 |
 | 最小交易數 | 200 | 低於則視為無效策略 |
+| 最小持股數 | 2 | `min_hold_stock` |
+| 條件組合上限 | 1000 | `num_combinations` |
 | 評分模式 | weighted | 加權平均 |
 | 驗證模式 | IS_OOS | 60/40 內外樣本 |
+
+> 以上皆取自 notebook cell 3 的 `config` dict。完整口徑見 [`_FACTS.md`](./_FACTS.md) §四。
+
+---
+
+## 六.1、程式碼實際放在哪（現場展示前務必先看）
+
+⚠️ **`ga_yoy_v1.ipynb` 只有 3 個 cell**，裡面**沒有**演化邏輯：
+
+| cell | 內容 |
+|---|---|
+| 1 | `import` + `sys.path.append(os.environ['CONDITION_PATH'])` + `from GA_v3.main import main` |
+| 2 | `get_position()` 持倉函式（流動性 > 1,500 萬 → 乘 YoY → `is_largest(10)` → `sim()`） |
+| 3 | `weights` 與 `config` dict（族群 70、`ngen` 400、15 核…） |
+
+**GA 引擎在另一個 package**：`Finlab_/jupyter/strategy/pakage/GA_v3/`
+（`main.py`、`evaluate.py`、`score.py`、`validation.py`、`run_ga.py`、`process_data.py`），
+由 `CONDITION_PATH` 環境變數注入。
+
+> DEAP Toolbox 建構、400 代演化迴圈、適應度函式、IS/OOS 切分、PBO 懲罰、checkpoint
+> **全部在 `GA_v3/` 裡**。面試現場若要開檔展示演化邏輯，**開 `GA_v3/`，不要開 notebook**。
+>
+> 這個切分本身也是可以講的設計：**notebook 只放「這個策略是什麼」（持倉函式 + 參數），
+> 引擎是可重用的 package**——所以同層的 `ga_GVI_v2` / `ga_peg` / `ga_prg` 可以共用同一套引擎。
 
 ---
 

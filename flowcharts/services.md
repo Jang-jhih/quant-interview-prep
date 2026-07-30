@@ -2,7 +2,7 @@
 
 ## 專案概述
 
-一個把量化研究能力「**對外暴露**」的服務編排層——上游是 `datawarehouse`（資料）、`research`（策略）、`evolution-lab`（演化）、`core`（共用邏輯），本層把這些能力包裝成四種對外形態：**AI Agent Runtime**、**自動化工作流引擎**、**FastAPI 資料 API**、**Streamlit 視覺化 Portal**。
+一個把量化研究能力「**對外暴露**」的服務編排層——上游是 `datawarehouse`（資料）、`research`（策略）、`evolution-lab`（演化）、`core`（共用邏輯），本層把這些能力包裝成四種對外形態：**AI Agent Runtime**、**自動化工作流引擎**、**FastAPI 資料 API**、**Next.js 視覺化 Portal**。
 
 ### 為什麼需要這層？
 
@@ -19,13 +19,48 @@
 | **Hermes** | Production Agent Runtime，承載 5 個 agent profile，透過 adapter 對接自動化引擎 | Primary runtime |
 | **n8n** | 自動化引擎，排程 / webhook / 資料 pipeline 全走這裡 | 唯一業務自動化 |
 | **data-api** | FastAPI 資料 API，把倉儲結果 query 暴露為 REST endpoint | 補強層 |
-| **plutus_ui** | Streamlit Portal，研究產出的視覺化入口（DW 血緣、資料集探索、回測模組、爬蟲 hub） | Portal |
+| **plutus_ui** | **Next.js** 視覺化 Portal，分**內網站**（`web/`）與**對外站**（`web-public/`）兩個獨立 app | Portal |
+
+> **前端技術選型**：Next.js 為唯一前端（[ADR-003](../README.md)）。早期版本為 Streamlit，
+> 已於遷移後全面汰除——若面試中被問「為什麼從 Streamlit 換掉」，見 §四.1 的遷移理由。
 
 > 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第七節**。
+
+> 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
 
 ---
 
 ## 一、整體架構（四個子服務 + 與上游的關係）
+
+### 1.0 白板版（被要求「畫一下架構」時畫這張）
+
+> 6 個框、5 條線，60 秒內可畫完。口訣：**上游做決策、本層只暴露；n8n 是神經、Hermes 是大腦。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
+flowchart LR
+    UP["能力實作層<br/>datawarehouse · research<br/>evolution-lab · core"]
+    N8N["n8n<br/>排程 / 觸發"]
+    HERMES["Hermes<br/>5 agent profile"]
+    API["data-api<br/>FastAPI REST"]
+    WEB["plutus_ui<br/>Next.js 內網站"]
+    PUB["web-public<br/>對外站 (隔離)"]
+
+    UP --> API
+    N8N --> HERMES
+    HERMES --> UP
+    API --> WEB
+    WEB -. "合規過濾" .-> PUB
+
+    classDef up fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    classDef svc fill:#fff4d6,stroke:#5c4500,stroke-width:2px,color:#5c4500;
+    classDef ui fill:#cfeecf,stroke:#226622,stroke-width:2px,color:#1f4a1f;
+    class UP up;
+    class N8N,HERMES,API svc;
+    class WEB,PUB ui;
+```
+
+### 1.1 細節版
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','secondaryColor':'#e0e0e0','tertiaryColor':'#f0f0f0','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
@@ -55,9 +90,9 @@ flowchart TD
         subgraph N8N["n8n Automation Engine"]
             direction TB
             N1["Workflow Categories"]
-            N1 --> N2["Hermes Workflows<br/>(19 個)"]
-            N1 --> N3["Risk Workflows<br/>(15 個)"]
-            N1 --> N4["System Workflows<br/>(5 個)"]
+            N1 --> N2["Hermes Workflows<br/>(25 個)"]
+            N1 --> N3["Risk Workflows<br/>(18 個)"]
+            N1 --> N4["System Workflows<br/>(4 個)"]
         end
 
         subgraph DATAAPI["data-api (FastAPI)"]
@@ -68,13 +103,10 @@ flowchart TD
             DA1 --> DA2 --> DA3
         end
 
-        subgraph UI["plutus_ui (Streamlit Portal)"]
+        subgraph UI["plutus_ui (Next.js)"]
             direction TB
-            UI1["DW 血緣圖"]
-            UI2["資料集探索"]
-            UI3["回測模組"]
-            UI4["OpenEvolve 引擎 UI"]
-            UI5["爬蟲 Hub"]
+            UI1["web/ 內網站<br/>(Next 16 + React 19)<br/>DW 血緣 · 資料集探索<br/>回測 · 演化 · 爬蟲 Hub"]
+            UI2["web-public/ 對外站<br/>(Supabase build 時預取)<br/>禁 data-api · 禁 service_role<br/>禁寫入 route"]
         end
     end
 
@@ -97,7 +129,7 @@ flowchart TD
     class HERMES,H1,H2,H3 highlight;
     class N8N,N1,N2,N3,N4 loop;
     class DATAAPI,DA1,DA2,DA3 branch;
-    class UI,UI1,UI2,UI3,UI4,UI5 finlab;
+    class UI,UI1,UI2 finlab;
     class CONSUMER eval;
 ```
 
@@ -187,22 +219,33 @@ flowchart TD
 
 | Agent 類型 | 模型 | 為什麼 |
 |---|---|---|
-| **維運類** (ops / steward) | GLM-5.2 (zai) | 任務結構化、對中文意圖理解強、成本可控 |
-| **研究類** (librarian / risk / quantix) | MiniMax M3 | 1M context，需要讀大量文件 / 程式碼 |
-| 無 fallback | — | 任一模型失敗即任務失敗，避免錯誤決策被掩蓋 |
+| **維運類** (ops / steward) | GLM-5.2 (zai provider) | 任務結構化、對中文意圖理解強、成本可控 |
+| **研究類** (librarian / risk / quantix) | MiniMax-M3 | 1M context，需要讀大量文件 / 程式碼 |
+| 全域 fallback | GLM-4.5 | MiniMax 回 429 時自動切換（`config.yaml` 頂層 `fallback_providers`）|
+
+> ⚠️ **被追問「模型設定在哪」要答得出層級**（面試官打開 `config.yaml` 會看到跟上表不同的東西）：
+> - `services/hermes/config.yaml` 的 `model.default` 是**全域預設 = MiniMax-M3**，`fallback` = `glm-4.5`
+> - 維運類的 `glm-5.2` 是**profile 層覆寫**（每個 profile 有自己的 `~/.hermes/profiles/<name>/config.yaml`），
+>   決策紀錄寫在 `services/hermes/README.md`（2026-07-03 切換，走 `ZAI_API_KEY`）
+> - 另外 `config.yaml` 還有 `orchestrator` / `researcher` 兩個**排程用角色**（kanban dispatcher），
+>   不在「5 個業務 profile」的計數內——被問到「到底幾個 profile」要能分清「業務 profile」與「排程角色」
 
 ---
 
-## 三、n8n 工作流分類（39 個 Workflow）
+## 三、n8n 工作流分類（48 個 Workflow）
 
-n8n 是**唯一業務自動化引擎**。39 個 workflow 分三大類，覆蓋資料、風險、Agent 協作、系統維運。
+n8n 是**唯一業務自動化引擎**。48 個 workflow 分三大類，覆蓋資料、風險、Agent 協作、系統維運。
+
+> 數字口徑：`find services/n8n/workflows -name '*.json' | wc -l` → **48**
+> （`hermes/` 25 + `risk/` 18 + `system/` 4 + 根層 1 個 `FinGPT_Daily_Update.json`）。
+> 這個數字會長，講的時候說「目前 48 個」而不是把它當固定規格。
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','secondaryColor':'#e0e0e0','tertiaryColor':'#f0f0f0','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
 flowchart LR
     TRIGGER["Workflow Trigger<br/>(Schedule / Webhook / Manual)"] --> CAT{"Workflow Category"}
 
-    CAT -- "Hermes (19 個)" --> HERMES_WF
+    CAT -- "Hermes (25 個)" --> HERMES_WF
 
     subgraph HERMES_WF["Hermes Workflows<br/>(與 Agent Runtime 協作)"]
         direction TB
@@ -214,7 +257,7 @@ flowchart LR
         HW6["🔄 ResearchLab Sync<br/>Failed Hypotheses Update"]
     end
 
-    CAT -- "Risk (15 個)" --> RISK_WF
+    CAT -- "Risk (18 個)" --> RISK_WF
 
     subgraph RISK_WF["Risk Workflows<br/>(市場風險自動化)"]
         direction TB
@@ -224,7 +267,7 @@ flowchart LR
         RW4["指數 / Backup<br/>TWII OHLC Refresh<br/>Risk Snapshot Audit"]
     end
 
-    CAT -- "System (5 個)" --> SYS_WF
+    CAT -- "System (4 個)" --> SYS_WF
 
     subgraph SYS_WF["System Workflows<br/>(資料同步與維運)"]
         direction TB
@@ -261,10 +304,11 @@ flowchart LR
 
 | 類別 | 數量 | 主要任務 |
 |---|---|---|
-| Hermes | 19 | Agent 任務派發 / 知識庫 / 記憶進化 |
-| Risk | 15 | 每日風險報告 / 週報 / 產業輪動 |
-| System | 5 | 資料同步 / 匯出 / 備份 / 審計 |
-| **合計** | **39** | — |
+| Hermes（`workflows/hermes/`） | 25 | Agent 任務派發 / 知識庫 / 記憶進化 |
+| Risk（`workflows/risk/`） | 18 | 每日風險報告 / 週報 / 產業輪動 |
+| System（`workflows/system/`） | 4 | 資料同步 / 匯出 / 備份 / 審計 |
+| 根層單檔 | 1 | `FinGPT_Daily_Update.json`（22:30 排程，見 [fingpt_risk](./market_risk_studies/fingpt_risk.md)）|
+| **合計** | **48** | — |
 
 ---
 
@@ -284,7 +328,7 @@ flowchart LR
         RT --> R2["breadth (市場廣度)"]
         RT --> R3["commentary (AI 評論)"]
         RT --> R4["dw (Warehouse 直查)"]
-        RT --> R5["etf_bh_metrics"]
+        RT --> R5["etf_bh_metrics<br/>⚠️ 檔案存在但未註冊"]
         RT --> R6["evolution (演化結果)"]
         RT --> R7["research (研究產出)"]
         RT --> R8["risk (風險指標)"]
@@ -326,9 +370,53 @@ flowchart LR
     class CLIENT finlab;
 ```
 
+### Router 口徑（會被打開 `main.py` 對帳）
+
+`app/main.py` 實際 `include_router` **9 個**：`health` / `dw` / `research` / `evolution` / `risk` /
+`commentary` / `active_etf` / `passive_etf` / `breadth`。
+
+注意兩件事，被問到要能直接回答：
+- `commentary` 與 `research` **共用 `/api/research` prefix**（兩個 router 掛同一個命名空間）
+- `etf_bh_metrics.py` **檔案存在但沒註冊**——是還沒接上的模組，不是 endpoint。
+  講「9 個 router」時如果對方數到 10 個檔案，這就是差異來源
+
+Readers 共 **5 個**：`warehouse_breadth` / `etf_snapshots` / `risk_snapshots` /
+`breadth_snapshots` / `ai_commentary`，全部唯讀。
+
 ---
 
-## 五、端到端流程（一個典型工作日）
+## 四.1、內外網隔離（對外站的合規邊界）
+
+> 這是本層**最值得講**的設計：量化平台一旦有對外頁面，**演算法細節本身就是要保護的資產**。
+> 我沒有靠「記得不要放」來管，而是把邊界寫成機械化規則。
+
+`plutus_ui` 是兩個**完全獨立**的 Next.js app（不共用 `node_modules`、不互相 import）：
+
+| | `web/`（內網） | `web-public/`（對外） |
+|---|---|---|
+| 資料源 | `services/data-api` HTTP（即時） | Supabase（**build 時預取**） |
+| 寫入能力 | 有 | **禁止**任何寫入型 route handler |
+| 憑證 | 內網 token | **禁止出現 `service_role`** |
+| 可見路由 | 全部 | 白名單制 |
+
+**硬規則（寫在 `plutus_ui/CLAUDE.md`，不是口頭約定）**
+
+1. `web-public/` **不得引用 `services/data-api`**——對外站沒有任何一條路徑能打到內網 API
+2. **不得上架**：`/ops`、`/evolution`、`/research-lab`、`/quantix`、`/chat`、`/dw`
+3. **演算法細節與交易指示語彙不得離開內網**——因子代號、閾值、OOS 統計、進場／出場／停損／停利
+4. 新增公開路由必須同步 `scripts/check-public-isolation.sh` 的 `ALLOWED_ROUTES` 與 `docs/public-scope.md`
+   → **忘記更新就過不了檢查**，這才是規則能撐住的原因
+
+### 為什麼從 Streamlit 遷到 Next.js（ADR-003）
+
+早期 Portal 是 Streamlit——優點是研究端自己就能寫頁面、不用排前端。但兩個問題逼出遷移：
+
+1. **無法做內外分離**：Streamlit 的 server-side 執行模型下，「對外站」與「內網站」很難證明彼此隔離；
+   對外要的是 build 時就把資料烤進靜態頁、執行期完全不碰內網
+2. **對外站需要真正的前端控制權**：路由白名單、CSP、預取策略、SEO——這些在 Streamlit 裡都是繞路
+
+> 面試時的誠實補充：遷移成本不低（頁面全部重寫），
+> 換來的是「對外曝光面可以被腳本驗證」——這在會碰到策略細節的專案上是必要的，不是為了跟流行。
 
 把四個子服務串起來看——n8n 排程 → Hermes 處理 → data-api 讀資料 → plutus_ui 呈現。
 
@@ -352,7 +440,7 @@ flowchart TD
     WRITE --> WF3["n8n 觸發 System Workflow<br/>(Daily Publish Supabase)"]
     WF3 --> SUPABASE[("Supabase")]
 
-    SUPABASE --> UI["🖥️ plutus_ui Page<br/>Daily Risk Dashboard"]
+    SUPABASE --> UI["🖥️ plutus_ui web/<br/>Daily Risk Dashboard"]
     UI --> USER["👤 使用者檢視"]
 
     WF1 -.並行.-> HERMES_WF["n8n 觸發 Hermes Workflow<br/>(Steward Daily Standup)"]
@@ -365,7 +453,7 @@ flowchart TD
     classDef finlab fill:#cfeecf,stroke:#226622,stroke-width:2px,color:#1f4a1f;
     classDef baseline fill:#e0ccff,stroke:#5a2eb8,stroke-width:2px,color:#3a1488;
     classDef branch fill:#ffe0bf,stroke:#b35a00,stroke-width:2px,color:#6b3a00;
-    class CRAN,WF1,WF2,WF3,HERMES_WF loop;
+    class CRON,WF1,WF2,WF3,HERMES_WF loop;
     class ADAPTER,RISK_AGENT,STEWARD_AGENT highlight;
     class DATAAPI,WAREHOUSE,SUPABASE finlab;
     class AUDIT,WARN eval;
@@ -393,8 +481,8 @@ flowchart TD
 | Adapter | **FastAPI** (port 18790) |
 | 自動化引擎 | **n8n** (Workflow / Webhook / Schedule) |
 | 資料 API | **FastAPI** + readers + cache_ttl |
-| 視覺化 Portal | **Streamlit** |
-| Agent 模型 | **GLM-5.2** (維運) / **MiniMax M3** (研究) |
+| 視覺化 Portal | **Next.js 16 + React 19**（`web/` 內網、`web-public/` 對外）|
+| Agent 模型 | **GLM-5.2** (維運 profile) / **MiniMax-M3** (研究 profile，亦為全域 default) / **GLM-4.5** (429 fallback) |
 | 雲端資料庫 | **Supabase** (Postgres) |
 | 容器化 | Docker Compose |
 | 監控通知 | Discord Webhook |

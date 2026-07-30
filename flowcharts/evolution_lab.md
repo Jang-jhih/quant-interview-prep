@@ -18,9 +18,39 @@
 
 > 本文件所有流程圖使用 **Mermaid** 語法，配色統一採「淺色底 + 深色字」原則，相容於亮／暗 IDE 主題。顯示方式請見**第八節**。
 
+> 📖 **讀法**：想快速理解看 **§1.0 白板版**（≤7 個框）；想看細節往下讀。標示 `>` 引言與「地雷 / 講法」的區塊是作者自己的面試準備筆記，**可直接略過**。
+
 ---
 
 ## 一、整體架構
+
+### 1.0 白板版（被要求「畫一下 LLM 演化怎麼跑」時畫這張）
+
+> 6 個框，一條回饋線。口訣：**LLM 只改 diff → 沙盒跑 → 評分 → MAP-Elites 填格 → 失敗訊息餵回去。**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
+flowchart LR
+    PROMPT["Prompt<br/>(elite 程式 + traceback)"]
+    LLM["MiniMax-M3<br/>產生 SEARCH/REPLACE diff"]
+    SANDBOX["沙盒執行"]
+    SCORE["三軌評分<br/>Alpha / Condition / Strategy"]
+    ELITE["MAP-Elites 分箱<br/>特徵 × 品質"]
+    STORE[("SQLite → Supabase")]
+
+    PROMPT --> LLM --> SANDBOX --> SCORE --> ELITE --> STORE
+    ELITE -. "菁英程式回饋" .-> PROMPT
+    SANDBOX -. "失敗 traceback" .-> PROMPT
+
+    classDef llm fill:#ffd6d6,stroke:#6b0000,stroke-width:2px,color:#6b0000;
+    classDef flow fill:#d6e8ff,stroke:#002b66,stroke-width:2px,color:#002b66;
+    classDef out fill:#e0ccff,stroke:#3a1488,stroke-width:2px,color:#3a1488;
+    class LLM llm;
+    class PROMPT,SANDBOX,SCORE,ELITE flow;
+    class STORE out;
+```
+
+### 1.1 細節版
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ececec','primaryTextColor':'#1a1a1a','primaryBorderColor':'#555555','lineColor':'#555555','secondaryColor':'#e0e0e0','tertiaryColor':'#f0f0f0','fontFamily':'"Noto Sans TC", "Microsoft JhengHei", sans-serif'}}}%%
@@ -78,7 +108,7 @@ flowchart TD
         R2 -.promote CLI.-> R3
     end
 
-    STORE --> UI["🖥️ plutus_ui Page 6<br/>因子唯讀瀏覽器"]
+    STORE --> UI["🖥️ plutus_ui web/<br/>/evolution 因子唯讀瀏覽器"]
 
     classDef highlight fill:#fff4d6,stroke:#b8860b,stroke-width:2px,color:#5c4500;
     classDef loop fill:#d6e8ff,stroke:#0050aa,stroke-width:2px,color:#002b66;
@@ -269,7 +299,7 @@ flowchart LR
     STAGING --> PROMOTE["promote CLI<br/>--table X [--dry-run]"]
     PROMOTE --> DIRECT
 
-    DIRECT --> UI["🖥️ plutus_ui Page 6<br/>因子唯讀瀏覽"]
+    DIRECT --> UI["🖥️ plutus_ui web/<br/>/evolution 因子唯讀瀏覽"]
 
     classDef baseline fill:#e0ccff,stroke:#5a2eb8,stroke-width:2px,color:#3a1488;
     classDef highlight fill:#fff4d6,stroke:#b8860b,stroke-width:2px,color:#5c4500;
@@ -295,7 +325,7 @@ flowchart LR
 | 參數 | 預設值 | 意義 |
 |---|---|---|
 | 演化代數 | 20 / 400（可調） | MAP-Elites 主迴圈世代數 |
-| LLM 模型 | DeepSeek / OpenAI 相容 | 程式生成 LLM |
+| LLM 模型 | **MiniMax-M3**（三處角色，見 §六.1） | 程式生成 LLM，走 OpenAI 相容 client |
 | Diff 格式 | SEARCH/REPLACE | 候選程式增量更新格式 |
 | 重採樣週期 | D / W / M / Q | IC 計算的時間週期 |
 | `scoring_mode` | icir / multi_objective | 評分器選擇 |
@@ -312,6 +342,23 @@ flowchart LR
 | 優化策略濾網 | Condition | MAP-Elites 探索多樣性 + T-stat/Hit Rate 確保精準 |
 | 生成可部署策略 | Strategy | Side-Channel 從 traceback 學習 + FinLab sim() 真實驗證 |
 
+### 六.1 LLM 配置：同一個模型、三個角色
+
+配置檔（`openevolve/financial_evolution/src/configs/boolean_factor_config.yaml`
+與 `configs/modes/{alpha,condition,strategy}/*.yaml`）裡 **MiniMax-M3 被指派了三個不同角色**：
+
+| 角色 | 用途 | 為什麼分開設 |
+|---|---|---|
+| **主力生成** | 產生 SEARCH/REPLACE diff | 低溫，要穩定產出可套用的 diff |
+| **高溫探索** | 同模型、高 temperature | 主力容易卡在區域最佳；高溫那支負責跳出去，配合 MAP-Elites 填格 |
+| **評估回饋** | 讀評分結果，整理成下輪 prompt 提示 | 把「為什麼分數低」翻成自然語言，比丟數字給主力有效 |
+
+全部走 `api_base: https://api.minimax.io/v1` + `MINIMAX_API_KEY`（OpenAI 相容介面）。
+
+> **選型理由（會被問）**：程式碼生成能力 + 1M context（要塞 elite 程式碼 + traceback + 資料 schema），
+> 且與 Hermes 研究類 profile 用同一個 provider，**只管一組 API key 與一份配額**。
+> 走 OpenAI 相容介面是刻意的——換 provider 只改 `api_base` 與模型名，不動演化邏輯。
+
 ---
 
 ## 七、技術棧
@@ -319,15 +366,63 @@ flowchart LR
 | 領域 | 套件 |
 |---|---|
 | LLM 演化框架 | **OpenEvolve**（MAP-Elites + Diff-based + Side-Channel） |
-| LLM Provider | **DeepSeek** / OpenAI 相容 client / Anthropic 相容 |
+| LLM Provider | **MiniMax-M3**（`api.minimax.io/v1`，OpenAI 相容 client） |
 | 台股量化回測 | **FinLab** (`data.get`、`sim` 回測引擎) |
 | 總經與衍生品資料 | **FinMind** / DataWarehouse (Parquet) |
 | 資料處理 | `pandas`, `numpy`, `pyarrow` |
 | 結果儲存 | **SQLite** (staging) + **Supabase** (production) |
 | 配置 | `YAML` (catalogs + factors_config + modes) |
-| 視覺化瀏覽 | **Streamlit** (plutus_ui Page 6) |
+| 視覺化瀏覽 | **Next.js**（`plutus_ui/web/` 的 `/evolution` 路由，唯讀）|
 | 過擬合檢測 | **DSR** (Deflated Sharpe Ratio) + IC stability |
 
 ---
 
+## 八、如何在 IDE 完整呈現 Mermaid 流程圖
+
+這份文件中的所有流程圖使用 **Mermaid 語法**，已內嵌「淺底深字」主題變數，**相容於亮／暗 IDE 主題**。
+
+### VS Code / Cursor（最推薦）
+
+在延伸模組市集搜尋並安裝**任一**即可：
+
+| 套件 | Publisher | 說明 |
+|---|---|---|
+| **Markdown Preview Mermaid Support** | *Matt Biilmann*（`bierner.markdown-mermaid`） | 最主流、最穩定，安裝後直接用 `Ctrl+Shift+V` 預覽 Markdown 就會渲染 |
+| **Markdown Mermaid** | *Brian Koh* | 整合更完整，支援匯出 PNG/SVG |
+| **Mermaid Markdown Syntax Highlighting** | *NETRON* | 額外提供語法高亮（可與上面任一搭配） |
+
+**操作**：打開 `.md` 檔 → `Ctrl+Shift+V`（Mac: `Cmd+Shift+V`）開啟預覽 → 流程圖會自動渲染。
+
+### JetBrains 家族（PyCharm / IntelliJ / DataGrip）
+
+**新版 (2023.1 之後) 內建支援**，無需額外安裝：
+
+1. `Settings` → `Languages & Frameworks` → `Markdown`
+2. 勾選 **"Render Mermaid diagrams in preview"**
+3. 開啟 Markdown 檔後，右上角切換到 **Preview** 或 **Split** 模式即可
+
+### GitHub / GitLab
+
+**原生支援**，把 `.md` push 上去後直接在網頁上看到渲染結果，**不需安裝任何套件**。
+
+### Obsidian / Notion / HackMD
+
+**原生支援**，把整份內容貼進去即會渲染。適合用來當面試時的展示媒介。
+
+### 瀏覽器直接看（免安裝）
+
+- **Mermaid Live Editor**：https://mermaid.live
+- **GitHub Gist**：貼成 `.md` gist 直接渲染
+
+---
+
+## 九、附錄：Mermaid 渲染驗證
+
+如果流程圖顯示空白或出現語法錯誤，先做這兩件事：
+
+1. **確認副檔名為 `.md`**（不是 `.txt`、`.markdown`）
+2. **貼到 [mermaid.live](https://mermaid.live) 驗證語法**：能渲染就代表 IDE 端問題；不能渲染代表語法錯
+
+> 本 repo 附有 `scripts/check_facts.sh`，會掃描所有 Mermaid 區塊的
+> `class` / `:::` 是否引用到未定義的節點或 classDef——推上去之前先跑一次。
 
