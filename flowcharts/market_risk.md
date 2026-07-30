@@ -65,6 +65,19 @@ flowchart TB
 
 ---
 
+## 二.1、Pack C · auxiliary_signal 已展開的獨立研究
+
+> Pack C 底下 `analyses/auxiliary_signal/` 共 7 個子模組，其中 2 個研究深度足以獨立成 flowchart，置於 [`./market_risk_studies/`](./market_risk_studies/) 子資料夾：
+
+| 研究主題 | 獨立文件 | 核心方法 | 面試故事 |
+|---|---|---|---|
+| **FinGPT 恐慌指數環境監控** | [`market_risk_studies/fingpt_risk.md`](./market_risk_studies/fingpt_risk.md) | cnyes 新聞爬蟲 → Llama-3-8B + FinGPT LoRA 推論（**12 年 ~2900 檔**）→ 4 sub-indicators → expanding percentile → Pack C state_icc/spearman 驗證 → n8n 每日 22:30 排程 | 兩次 pivot 故事：2026-07-14 因 IC/IR 退化**主動降格**為 overlay；2026-07-15 發現 README 寫錯**公開修正**物理上限 vs 啟動門檻 |
+| **產業輪動風險監控** | [`market_risk_studies/industry_rotation_risk.md`](./market_risk_studies/industry_rotation_risk.md) | cmoney 37 集團股 → rotation_intensity + theme_strength 雙指標 → 1-5 風險分數 → Discord 4 色通知 | **12 輪 autoresearch**（1 baseline KEEP + 11 DISCARD）；v8/v9 形成 Pareto 邊界；揭露 v1 η²=0.36 是 circular 評估、真正外部 η²=0.038 |
+
+> 尚未展開的 5 個姊妹模組（`composite_aux_ensemble` / `concept_vol_decay` / `derivatives_chip_thermometer` / `no_leader_vol_breadth` / `vol_lead_indicators`）維持在 Pack C 節點底下，待後續按需擴充。
+
+---
+
 ## 三、資料源治理與雙市場覆蓋
 
 > 所有指標、標籤、基準指數一律從倉儲 parquet 讀取。禁止直連 FinLab API、禁止讀 FinLab 私有 pickle／feather cache、禁止在腳本同層自建 dataset。TAIEX 與 OTC 必須同時評估。

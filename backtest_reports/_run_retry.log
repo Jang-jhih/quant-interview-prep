@@ -1,0 +1,63 @@
+
+>>> LowVol_Alpha_V1.ipynb
+2026-07-30 15:09:04.327 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+2026-07-30 15:09:04.367 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+2026-07-30 15:09:05.183 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+2026-07-30 15:09:05.227 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+輸入成功!
+輸入成功!
+<IPython.core.display.HTML object>
+[OK] LowVol_Alpha_V1: lowvol_alpha_v1.html (2492852 bytes) title='LowVol_Alpha_V1'
+
+>>> LowVol_Alpha_V2.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] LowVol_Alpha_V2: lowvol_alpha_v2.html (2494275 bytes) title='LowVol_Alpha_V2'
+
+>>> 國家認證2.ipynb
+國家認證2.ipynb:cell3:44: FutureWarning: ChainedAssignmentError: behaviour will change in pandas 3.0!
+You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
+A typical example is when you are setting values in a column of a DataFrame, like:
+
+df["col"][row_indexer] = value
+
+Use `df.loc[row_indexer, "col"] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+Fetched 7 datasets in 1.0s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+  cached  etl:adj_open
+<IPython.core.display.HTML object>
+[OK] 國家認證2: national_cert_2.html (2477837 bytes) title='國家認證2'
+
+>>> 快射了.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] 快射了: strong_breakout.html (2493528 bytes) title='強勢突圍'
+
+DONE fail=0/4 out=/home/work/finlab/backtest_reports

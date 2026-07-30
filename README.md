@@ -203,15 +203,18 @@ flowchart TB
 
 ```
 quant-interview-prep/
-├── README.md                      # 本檔（系統總覽與設計理念）
-└── flowcharts/                    # 架構流程圖 + 面試輔助文件
-    ├── example_universe_selection.md # 1. 範例：GA 演化選股策略（5 張 Mermaid）
-    ├── evolution_lab.md           # 2. LLM 因子自動演化實驗室（5 張 Mermaid）
-    ├── datawarehouse.md           # 3. 多源金融資料倉儲（4 張 Mermaid）
-    ├── services.md                # 4. 統一 AI 服務編排層（5 張 Mermaid）
-    ├── market_risk.md             # 5. 事件型市場風險評估（5 張 Mermaid）
-    ├── SOURCE_MANIFEST.md         # 每份流程圖對應的程式碼路徑（追溯用）
-    └── INTERVIEW_BRIEFING.md      # 面試口語稿：30 秒簡報 + 專有名詞 + 預期 Q&A + 地雷
+├── README.md                          # 本檔（系統總覽與設計理念）
+└── flowcharts/                        # 架構流程圖 + 面試輔助文件
+    ├── example_universe_selection.md  # 1. 範例：GA 演化選股策略（5 張 Mermaid）
+    ├── evolution_lab.md               # 2. LLM 因子自動演化實驗室（5 張 Mermaid）
+    ├── datawarehouse.md               # 3. 多源金融資料倉儲（4 張 Mermaid）
+    ├── services.md                    # 4. 統一 AI 服務編排層（5 張 Mermaid）
+    ├── market_risk.md                 # 5. 事件型市場風險評估（5 張 Mermaid）
+    ├── market_risk_studies/           # 5.1-5.2 Pack C auxiliary_signal 展開（獨立研究）
+    │   ├── fingpt_risk.md             #     FinGPT 恐慌指數（12 年輿情 + 雙 pivot 故事）
+    │   └── industry_rotation_risk.md  #     產業輪動風險（12 輪 autoresearch + Pareto 邊界）
+    ├── SOURCE_MANIFEST.md             # 每份流程圖對應的程式碼路徑（追溯用）
+    └── INTERVIEW_BRIEFING.md          # 面試口語稿：30 秒簡報 + 專有名詞 + 預期 Q&A + 地雷
 ```
 
 > **注意**：本 repo 僅包含**文件與流程圖**，不含程式碼。原始碼位於私有 Plutus monorepo；每份流程圖的程式路徑對照請見 [`flowcharts/SOURCE_MANIFEST.md`](./flowcharts/SOURCE_MANIFEST.md)。
@@ -228,12 +231,15 @@ quant-interview-prep/
 1. 本 README
 2. [`flowcharts/datawarehouse.md`](./flowcharts/datawarehouse.md)（平台核心）
 3. [`flowcharts/market_risk.md`](./flowcharts/market_risk.md)（方法論最嚴謹）
-4. [`flowcharts/INTERVIEW_BRIEFING.md`](./flowcharts/INTERVIEW_BRIEFING.md)「預期問題」章節
+4. 任選 1 份 Pack C 子題深探：
+   - [`flowcharts/market_risk_studies/fingpt_risk.md`](./flowcharts/market_risk_studies/fingpt_risk.md)（LLM + 12 年輿情 + 雙 pivot 誠實故事）
+   - [`flowcharts/market_risk_studies/industry_rotation_risk.md`](./flowcharts/market_risk_studies/industry_rotation_risk.md)（12 輪 autoresearch 紀律 + circular trap 揭露）
+5. [`flowcharts/INTERVIEW_BRIEFING.md`](./flowcharts/INTERVIEW_BRIEFING.md)「預期問題」章節
 
 ### 🎯 給求職者自己（面試前準備）
-1. [`flowcharts/INTERVIEW_BRIEFING.md`](./flowcharts/INTERVIEW_BRIEFING.md) —— 口語稿，反覆練 30 秒電梯簡報
+1. [`flowcharts/INTERVIEW_BRIEFING.md`](./flowcharts/INTERVIEW_BRIEFING.md) —— 口語稿，反覆練 30 秒電梯簡報（現在共 7 章：5 主題 + 2 Pack C 子題）
 2. [`flowcharts/SOURCE_MANIFEST.md`](./flowcharts/SOURCE_MANIFEST.md) —— 確保每個細節都能追溯到程式碼
-3. 5 份 flowchart 各跑一次 IDE Mermaid 預覽，確認渲染正常
+3. 7 份 flowchart 各跑一次 IDE Mermaid 預覽，確認渲染正常
 4. 找人模擬面試，特別練習「地雷題」（每份 briefing 末尾都有列）
 
 ---
@@ -246,7 +252,7 @@ quant-interview-prep/
 | **資料源** | FinMind · FinLab · yfinance · Binance · FRED · EIA · CFTC · J-Quants · Pykrx · FinanceDataReader · Naver Finance |
 | **計算層** | pandas · NumPy · SciPy · scikit-learn |
 | **量化框架** | DEAP（GA）· OpenEvolve（LLM 演化）· vectorbt · finlab |
-| **AI / LLM** | GLM-5.2 · MiniMax M3 · Claude · Hermes Agent Runtime · OpenCode |
+| **AI / LLM** | GLM-5.2 · MiniMax M3 · Claude · Hermes Agent Runtime · OpenCode · **Llama-3-8B + FinGPT LoRA 8-bit**（cnyes 輿情推論）|
 | **統計驗證** | Fisher exact test · BH-FDR · Block Bootstrap · Purged Walk-forward · MAP-Elites · Event Study · CAPM-adjusted AR |
 | **服務層** | FastAPI · Streamlit · n8n · Docker Compose |
 | **視覺化** | Plotly · matplotlib · Mermaid |

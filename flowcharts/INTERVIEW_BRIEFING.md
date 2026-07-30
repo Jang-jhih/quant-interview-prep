@@ -345,6 +345,123 @@
 
 ---
 
+## 六、FinGPT 恐慌指數環境監控（fingpt_risk）
+
+### 30 秒電梯簡報
+
+> 這是我用 **Llama-3-8B + FinGPT LoRA** 把 cnyes 新聞做輿情推論，建立 **12 年（2015~2026）涵蓋 ~2900 檔股票**的 sentiment warehouse，再算出當下市場恐慌程度的 [0, 1] 百分位指標。關鍵是：這個指標**不預測漲跌方向**，只描述當下的恐慌環境，給下游策略當 regime 條件用。我做這題時碰到兩次關鍵 pivot——一次是實測發現 IC/IR 退化，**主動從方向預測降格**為環境描述器；一次是發現 README 把「物理上限」跟「啟動門檻」寫反了，**公開修正**。
+
+### 架構說明要點（按這個順序講）
+
+1. **先講資料**——cnyes 新聞清單 → NewsScraper 抓正文 → Llama-3-8B + FinGPT LoRA 8-bit 推論 → `fingpt_stock_sentiment` warehouse（12 年 ~290 萬筆）
+2. **再講指標**——cross-sectional Z-score → 4 個並聯子指標（panic_index / volatility / anomaly_count / trend）→ 各自 expanding percentile（`min_periods=60`）→ 主指標 `panic_index_rank`
+3. **講驗證**——Pack C auxiliary 不看 IC/IR，改看「狀態相關性」：state_icc（η²）≥0.05、state_spearman |ρ|>0.3 且 p<0.01、quantile_separation>0；目標狀態變數是 TAIEX/OTC 的 20d rvol + 5d MDD
+4. **講生產**——n8n 每日 22:30 TST cron trigger → GPU 防呆（pgrep 4 個衝突 process）→ atomic UI snapshot（schema v2）→ Discord 通知
+5. **最後講兩次 pivot**——這是最大亮點：
+   - 2026-07-14：實測 IC 0.0296/IR 0.2599 比 README 0.0360/0.3134 退化 17~18% → 主動降格
+   - 2026-07-15：發現 README 寫「FinGPT 模型 2024 部署/無法往前補」是錯的，warehouse 實際有 12 年資料，限制其實是 `expanding(min_periods=60)` 啟動門檻
+
+### 專有名詞對照
+
+| 中文 / 英文 | 白話解釋 |
+|---|---|
+| **FinGPT** | 用 Llama 底座 + 金融語料 LoRA 微調的 LLM，專做財金輿情推論 |
+| **LoRA（Low-Rank Adaptation）** | 只微調少量低秩矩陣，不用動主模型權重；8-bit 版本省 VRAM |
+| **Cross-sectional Z-score** | 每日把所有股票的 sentiment 標準化（x-μ_daily)/σ_daily，消除大盤情緒漂移 |
+| **Expanding percentile** | 每天用「歷史至今日」累積分佈算百分位，往前看不往後看（避免 lookahead）|
+| **`min_periods=60`** | 啟動門檻——前 60 天不產出 rank，避免小樣本噪聲 |
+| **Pack C · auxiliary_signal** | 不預測方向的市場狀態研究軸，禁止用方向 IC 評估 |
+| **state_icc（η²）** | Intraclass Correlation——把分數切 4 分位看狀態變數的組間變異比 |
+| **state_spearman** | 分數跟狀態變數的 rank 相關，越負代表越能抓高波動 |
+| **quantile_separation** | Q4 平均 − Q1 平均，必須 > 0 才代表分數有區分力 |
+| **sign_flip_ratio** | 滾動相關翻號比例，過高 = 信號不穩定 |
+| **lag1_autocorr** | lag 1 自相關，過低 = 雜訊、過高 = 鈍化 |
+| **Atomic UI snapshot** | 用臨時檔 + rename 寫入，下游不會讀到半成品 |
+| **Pivot（研究軸變更）** | 從一個研究假設換到另一個；不是失敗，是誠實回應實證 |
+
+### 預期面試問題
+
+**Q：為什麼用 Llama-3-8B + LoRA 而不是直接呼叫 GPT-4 API？**
+> 三個原因：1) 成本——12 年 ~290 萬筆推論，API 費用會爆；2) 隱私——研究資料不上傳第三方；3) FinGPT 是金融語料預訓練的 LoRA，對財金語意的掌握比通用 API 更精準。
+
+**Q：12 年輿情資料怎麼可能？LLM 不是 2024 才部署？**
+> 這正是 2026-07-15 我 README 修正的重點。LLM 確實 2024 才部署，但**回推**了所有 cnyes 歷史新聞——warehouse 有 2015~2026 完整 12 年 sentiment 推論結果。原本 README 寫錯把「`expanding(min_periods=60)` 啟動門檻」當成「物理上限」，其實只是契約選擇的 OOS 起點。
+
+**Q：2026-07-14 的降格 pivot 是什麼意思？訊號失敗嗎？**
+> 不是失敗，是**範圍收斂**。原本在 `top_risk/` 軸宣稱預測下跌方向，實測 IC/IR 退化 17~18%——表示方向預測力不穩。但狀態相關性還在，所以改到 `auxiliary_signal/` 軸只當環境描述器。這是「不為了表面好看而護航失效假設」的誠實選擇。
+
+**Q：n8n 排程的 GPU 防呆是怎麼做的？**
+> `pgrep -f` 同時檢查 4 個衝突 process（`run_daily_update / run_backfill / run_inference / ingest_news`），任一在跑就跳 skip 並發 Discord 通知。避免 LLM 推論疊加 OOM。
+
+### 地雷
+
+- **不要主動講「以前宣稱預測下跌」**——主動講會被認為是 bug。被問到才講 pivot 故事
+- **不要把 `min_periods=60` 講成「物理限制」**——那是啟動門檻，跟物理上限不同
+- **被問「實盤用了沒」**：誠實說「目前是 overlay 參考，下游策略還沒正式上線自動交易」
+- **不要把 state_icc 跟方向 IC 混為一談**——η² 是狀態變異比，IC 是預測相關，**完全不同語意**
+
+---
+
+## 七、產業輪動風險監控（industry_rotation_risk）
+
+### 30 秒電梯簡報
+
+> 這是我用 cmoney 集團股分類（37 個集團、248 檔成員）+ TSE/OTC 收盤價，設計兩條指標：**rotation_intensity**（10 日內集團報酬變動平均，越高越亂）跟 **theme_strength**（top3 集團穩定度，越低越沒主線）。兩條 Z-score 組成 1-5 風險分數，每日推 Discord 4 色通知。我跑 **12 輪 autoresearch**，**只有 v1 baseline 過得了 gate，其餘 11 輪全 DISCARD**。最大收穫是發現 v1 README 的 η²=0.36 是 **circular 評估**——用 theme_strength 當 state_var 算的（公式裡有 theme_raw），真正外部 twii_vol 重算只有 0.038，所以我誠實揭露並補上外部寬度驗證。
+
+### 架構說明要點（按這個順序講）
+
+1. **先講資料**——cmoney 37 集團（從 FinLab 46 產業改過來，external icc 提升 2.9×）+ TSE/OTC close parquet
+2. **再講指標**——rotation_intensity 公式 `diff().abs().mean(axis=1).rolling(10).mean()`；theme_strength 公式 `(top3_pct × 0.5 + (1-leader_pct) × 0.5) × 100`，兩條都先 lookback-only percentile（window=252 min_periods=60）
+3. **講風險分數**——`score = 1 + (z_rot>0.5) + (z_rot>1.5) + (z_theme<-0.5) + (z_theme<-1.5)` clip(1,5)，4 色 Discord（綠黃橘紅）
+4. **講 12 輪 autoresearch**——v1 baseline KEEP 後試了 5 種參數微調（median 平滑、min_periods）+ 6 種機制層（hysteresis、cooldown）+ 1 個 circular 評估，**全 DISCARD**。v8/v9 形成 Pareto 邊界（v8 icc=0.31 過/switch=15.58 沒過，v9 反之）
+5. **最後講 circular trap**——這是最大誠實亮點：v1 README 的 η²=0.36 是用 theme_strength 當 state_var 算的，公式本身引用 theme_raw → 用真正外部 twii_vol 重算只有 0.038。我補上台股 8 寬度指標 + 美股 11 寬度指標做外部驗證
+
+### 專有名詞對照
+
+| 中文 / 英文 | 白話解釋 |
+|---|---|
+| **cmoney 集團股** | cmoney 平台的分類——把有集團關係的股票聚合（例如台塑集團 = 台塑+南亞+台化+台塑化）|
+| **Rotation Intensity** | 集團報酬變動的 10 日平均——越高代表資金在集團間快速輪動 |
+| **Theme Strength** | top3 集團穩定度——越高代表市場有明確主線 |
+| **Pareto 邊界** | 多目標最佳化——icc 跟 switch_per_Q 互相拉扯，無法同時最優 |
+| **Autoresearch** | 自動化研究迭代框架——每輪改一個機制，全過 gate 才 KEEP |
+| **Circular Evaluation** | 循環評估——用衍生指標當 state_var，公式跟指標有相關性 → 分數膨脹 |
+| **state_icc ≥ 0.30** | Pack C auxiliary 的主決策門檻（η²） |
+| **switch_per_Q ≤ 12** | 每季切換次數——過高代表信號跳來跳去不穩定 |
+| **sign_flip_ratio ≤ 5%** | 滾動 15 天相關翻號比例（注意：README 寫 30% 是舊版）|
+| **lag1_autocorr ∈ [0.55, 0.85]** | lag 1 自相關範圍（注意：README 寫 [0.40, 0.85] 是舊版）|
+| **Cohen's d** | 標準化效果量——兩組均值差除以合併標準差，0.5 算中等效果 |
+| **Spearman ρ** | rank 相關——比 Pearson 對極端值更穩健 |
+| **RSP / SPY** | RSP = S&P 500 Equal-Weight ETF；SPY = 一般市值加權版 |
+| **lead-lag** | 領先-落後關係——A 先動 B 後動？
+
+### 預期面試問題
+
+**Q：12 輪全 DISCARD 只留 v1，會不會是過度堅持？**
+> 不會——這是 Pack C gate 的設計目的。gate 嚴格是為了擋偽顯著。v1 是 baseline，後續 11 輪都「試著改良」，但每次改良要嘛傷 icc、要嘛傷 switch，沒有任何一個能同時滿足——這恰恰證明 v1 已經在 Pareto 邊界上，無法被進一步優化。
+
+**Q：v8/v9 Pareto 邊界是什麼意思？**
+> v8 cooldown=1：icc=0.31 過門檻、switch_per_Q=15.58 超過 12 → 卡在 switch。v9 cooldown=2：switch=11.62 過、icc=0.26 不過 0.30 → 卡在 icc。兩個版本各過一個 gate，**沒有候選能同時滿足**——這就是多目標最佳化裡的 Pareto 邊界，沒有「最好」只有「互換」。
+
+**Q：circular trap 是怎麼發現的？**
+> v1 README 宣稱 η²=0.36（很高），但我懷疑——v1 公式裡 score 用 theme_strength 算，如果 state_var 也選 theme_strength，等於用公式產物評估公式本身。我用真正外部 twii_vol（TAIEX 波動率）重算，η² 掉到 0.038。這發現寫在 `notes/cmoney_classification_test/findings.md`，**我沒有刪掉 v1 紀錄，而是誠實揭露並補上外部驗證**。
+
+**Q：外部寬度驗證（8 台股 + 11 美股指標）的結論是什麼？**
+> 台股 8 指標全跨期同向、翻號比都 < 5%，最高 ρ=-0.40（above_ma60），驗證 v1 是台股內部狀態描述器。但美股 11 指標跨期同向 0/11，只有 RSP/SPY 20d 變化率 Cohen's d=+0.51（中等效果）——**跨市場用途需要重新設計，不能直接套用**。
+
+**Q：為什麼用 cmoney 集團股不用一般產業分類？**
+> 我做了 A/B test。原本 v1 用 FinLab 46 產業分類，後來改 cmoney 37 集團股，external icc 提升 **2.9×**（`notes/cmoney_classification_test/`）。集團股的好處是成員有真實股權關係（母子公司、交叉持股），資金流動比產業分類更同步。
+
+### 地雷
+
+- **不要主動講 circular trap**——自己講等於自爆。被問「v1 的 0.36 怎麼來的」才講，並強調「我**主動**補上外部驗證」
+- **不要把 switch_per_Q=22.62 講成 bug**——v1 LOCK 時已經知道超過 12，是契約選擇下的 Pareto 最優解，不是疏漏
+- **不要混淆兩個產業輪動**——Plutus 的 `research/market-analysis/theme_industry_correlation/` 是學術式 5760 組回測，跟這個生產監控完全不同
+- **被問「實盤用了沒」**：誠實說「目前是每日 Discord 通知 + UI snapshot，下游策略還沒正式接入自動交易」
+- **被問「v1 還在用嗎」**：是，v1 從 2026-07-01 LOCK 到現在沒換，後續沒有任何候選能同時過 gate
+
+---
+
 ## 共通問答（跨主題）
 
 **Q：這些是你一個人做的嗎？**

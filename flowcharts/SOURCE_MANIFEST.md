@@ -24,6 +24,8 @@
 | 3 | [`datawarehouse.md`](./datawarehouse.md) | 多源金融資料倉儲系統 | `datawarehouse/` |
 | 4 | [`services.md`](./services.md) | 統一 AI 服務編排層 | `services/{hermes,n8n,data-api}` + `plutus_ui/` |
 | 5 | [`market_risk.md`](./market_risk.md) | 事件型市場風險評估研究平台 | `market-risk/` |
+| 5.1 | [`market_risk_studies/fingpt_risk.md`](./market_risk_studies/fingpt_risk.md) | FinGPT 恐慌指數環境監控（Pack C 子模組）| `market-risk/analyses/auxiliary_signal/fingpt_risk/` |
+| 5.2 | [`market_risk_studies/industry_rotation_risk.md`](./market_risk_studies/industry_rotation_risk.md) | 產業輪動風險監控（Pack C 子模組）| `market-risk/analyses/auxiliary_signal/industry_rotation_risk/` |
 
 ---
 
@@ -126,6 +128,48 @@
 
 ---
 
+## 5.1 `market_risk_studies/fingpt_risk.md` — FinGPT 恐慌指數環境監控（Pack C 子模組）
+
+> cnyes 新聞爬蟲 → Llama-3-8B + FinGPT LoRA 推論 → 12 年 sentiment warehouse → expanding percentile → Pack C state_icc 驗證 → n8n 22:30 排程。包含兩次主動 pivot 故事。
+
+| 角色 | 路徑 | 內容 |
+|---|---|---|
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/README.md` | 模組入口、兩次 pivot 紀錄（2026-07-14 軸變更、2026-07-15 README 修正）|
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/AGENTS.md` | 軸契約（overlay，禁止方向預測）|
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/fingpt_risk_indicator.py` | `FinGPTRiskIndicator` 類——4 sub-indicators（panic_index / volatility / anomaly_count / trend）+ `calculate_quantile_ranks(min_periods=60)` expanding percentile |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/read_fingpt_data.py` | `read_fingpt_data`、`convert_to_wide_format`（pivot + cross-sectional Z-score）|
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/tools/pipeline/{config,warehouse_writer,transforms,scraper}.py` | ingest pipeline：cnyes 爬蟲 + Llama-3-8B + FinGPT LoRA 推論（MODEL_ID 寫死於 config:11-13）→ warehouse |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/analysis/validate_auxiliary_signal.py` | Pack C 主驗證：state variables（TAIEX/OTC rvol 20d + dd 5d）+ 3 主決策（state_icc/spearman/quantile_separation）+ 3 守門 + OOS 50d 強制 |
+| 📓 議題實例 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/notebooks/risk_dashboard.ipynb` | Dashboard notebook——gate 排序顯示 horizon 5/10/20d 的 oos_lift、recent252_lift |
+| 📓 議題實例 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/fingpt_risk/versions/v0_aux_pivot/{README.md, replicate.py}` | 2026-07-14 軸 pivot 復現版本 |
+| 🐳 n8n workflow | 🏠 `/home/user/Desktop/Plutus/services/n8n/workflows/FinGPT_Daily_Update.json` | n8n 每日排程——cron `30 22 * * *` Asia/Taipei + GPU 防呆 + Discord skipped 通知 |
+| 🐳 API 後端 | 🏠 `/home/user/Desktop/Plutus/infrastructure/jupyter/api/main.py` | `/api/warehouse/update-fingpt`（L995）、`/api/fingpt_risk/run_daily`（L365）、`/api/warehouse/fingpt-status`（L1048）|
+| 🐳 共用元件 | 🏠 `/home/user/Desktop/Plutus/market-risk/src/market_risk_common/ui_export.py` | atomic UI snapshot（schema_version=2），下游 dashboard 共用 |
+| 🔍 追溯 | explore session `ses_04e3a63caffe1JP0EADmPN44Ml`（bg `bg_a8a079a4`）| 當初 trace FinGPT 全鏈路的調查紀錄 |
+
+---
+
+## 5.2 `market_risk_studies/industry_rotation_risk.md` — 產業輪動風險監控（Pack C 子模組）
+
+> cmoney 37 集團 → rotation_intensity + theme_strength 雙指標 → 1-5 風險分數 → Discord 通知。包含 12 輪 autoresearch（1 KEEP + 11 DISCARD）+ v8/v9 Pareto 邊界 + circular trap 揭露。
+
+| 角色 | 路徑 | 內容 |
+|---|---|---|
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/README.md` | 模組入口、v1 OOS 表現、外部寬度驗證摘要 |
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/AGENTS.md` | 子專案進入點 + 工作規範 |
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/notes/baseline_contract.md` | v1-v12 autoresearch 完整歷程、Pareto 邊界分析、外部寬度驗證 |
+| 📚 SSOT | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/versions/v1_baseline/README.md` | v1 baseline 結案報告 |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/cmoney_data.py` | 37 集團載入 + `compute_group_mean_return` + `compute_rotation_intensity`（diff().abs().mean.rolling10）+ `compute_theme_strength`（top3_pct × 0.5 + (1-leader_pct) × 0.5）|
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/indicators.py` | `calculate_z_score(window=252, min_periods=60)` + `calc_risk_score`（4 觸發加總 clip 1-5）+ 4 色 Discord + 3 分支 action suggestion |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/assess.py` | `RotationRiskAssessment` dataclass + `assess_industry_rotation_risk` 組裝 |
+| 🎯 主來源 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/autoresearch_v2.py` | 12 輪 iteration 框架 + gate 實作（line 163-249，與 README 數字不一致：實際 sign_flip ≤5% / lag1 ∈ [0.55, 0.85]）|
+| 📓 議題實例 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/scripts/{breadth,run_us_breadth_oos}.py` | 外部寬度驗證——台股 8 指標（n=481）+ 美股 11 指標（n=463）+ RSP/SPY Cohen's d |
+| 📓 議題實例 | 🏠 `/home/user/Desktop/Plutus/market-risk/analyses/auxiliary_signal/industry_rotation_risk/notes/cmoney_classification_test/findings.md` | **circular trap 揭露**：v1 README η²=0.36 用 theme_strength 當 state_var（公式含 theme_raw），真正外部 twii_vol 重算 η²=0.038 |
+| 🐳 共用元件 | 🏠 `/home/user/Desktop/Plutus/market-risk/src/market_risk_common/signal_gate.py` | `GateConfig` + `evaluate_candidate`（autoresearch 共用框架）|
+| 🔍 追溯 | explore session `ses_04e3a611affexO6KPl4c2MFEqi`（bg `bg_029094f1`）| 當初 trace industry rotation 全鏈路的調查紀錄 |
+
+---
+
 ## 製作方法與追溯性
 
 每份流程圖的產出流程一致：
@@ -140,3 +184,5 @@
 | 流程圖 | 缺漏 | 已確認於何處 |
 |---|---|---|
 | `datawarehouse.md` | 韓股 KRX（Pykrx + FDR + Naver Finance 三源組合）尚未畫入 | `datawarehouse/src/bulk_downloader/registry.py:1701-1811`、`constants.py:85-138`、`docs/decisions/ADR-013-韓股資料源-Pykrx-整合.md` |
+| `market_risk.md`（Pack C）| `auxiliary_signal/` 其餘 5 個子模組尚未展開獨立 flowchart：`composite_aux_ensemble` / `concept_vol_decay` / `derivatives_chip_thermometer` / `no_leader_vol_breadth` / `vol_lead_indicators` | `market-risk/analyses/auxiliary_signal/` 各子目錄 README |
+| `market_risk.md`（analyses/）| `analyses/` 其他子模組尚未展開：`bottom_dip` / `eth_short_stock_picking` / `index_futures_derisk` / `leverage_guard_overlay` / `macro_regime_overlay` / `top_risk` / `top_risk_short_picking` / `形態學研究` / `系統性牛雄分析` | `market-risk/analyses/` 各子目錄 README |

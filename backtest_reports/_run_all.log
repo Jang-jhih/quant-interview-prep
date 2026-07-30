@@ -1,0 +1,215 @@
+
+>>> GVI_V1.ipynb
+2026-07-30 15:04:56.603 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+2026-07-30 15:04:56.657 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+2026-07-30 15:04:57.476 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+2026-07-30 15:04:57.533 | INFO     | FinMind.data.finmind_api:login_by_token:85 - Login success
+GVI_V1.ipynb:cell4:41: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+GVI_V1.ipynb:cell4:48: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+輸入成功!
+輸入成功!
+<IPython.core.display.HTML object>
+[OK] GVI_V1: gvi_v1.html (2446037 bytes) title='GVI_V1'
+
+>>> LowVol_Alpha_V1.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[FAIL] LowVol_Alpha_V1: no report object produced
+
+>>> LowVol_Alpha_V2.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[FAIL] LowVol_Alpha_V2: no report object produced
+
+>>> S_yoy_v2_v1.ipynb
+S_yoy_v2_v1.ipynb:cell1:22: FutureWarning: The default fill_method='pad' in FinlabDataFrame.pct_change is deprecated and will be removed in a future version. Either fill in any non-leading NA values prior to calling pct_change or specify 'fill_method=None' to not fill NA values.
+Fetched 7 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+  cached  etl:adj_open
+<IPython.core.display.HTML object>
+[OK] S_yoy_v2_v1: s_yoy_v2_v1.html (2472617 bytes) title='S_yoy_v2_v1'
+
+>>> S_yoy_v5.ipynb
+S_yoy_v5.ipynb:cell1:29: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+S_yoy_v5.ipynb:cell2:9: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+S_yoy_v5.ipynb:cell2:10: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+Fetched 7 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+  cached  etl:adj_open
+Daily usage: 246.8 / 5000 MB - etl:full_cash_delivery_stock_filter
+<IPython.core.display.HTML object>
+[OK] S_yoy_v5: s_yoy_v5.html (2444842 bytes) title='yoy_v5'
+
+>>> super8.ipynb
+super8.ipynb:cell1:21: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+super8.ipynb:cell1:28: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] super8: super8.html (2357483 bytes) title='super8'
+
+>>> super888.ipynb
+super888.ipynb:cell1:28: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+super888.ipynb:cell1:35: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] super888: super888.html (2433140 bytes) title='Super888'
+
+>>> super8888.ipynb
+super8888.ipynb:cell1:19: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+super8888.ipynb:cell1:26: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] super8888: super8888.html (2349994 bytes) title='super8888'
+
+>>> 五線穿雲術.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+[OK] 五線穿雲術: five_line_cloud.html (2494868 bytes) title='五線穿雲術 '
+
+>>> 千層.ipynb
+千層.ipynb:cell2:65: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+千層.ipynb:cell2:73: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+Fetched 6 datasets in 0.5s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+[OK] 千層: capital_layer.html (2390087 bytes) title='Capital_Layer'
+
+>>> 國家認證2.ipynb
+國家認證2.ipynb:cell3:44: FutureWarning: ChainedAssignmentError: behaviour will change in pandas 3.0!
+You are setting values through chained assignment. Currently this works in certain cases, but when using Copy-on-Write (which will become the default behaviour in pandas 3.0) this will never work to update the original DataFrame or Series, because the intermediate object on which we are setting values will behave as a copy.
+A typical example is when you are setting values in a column of a DataFrame, like:
+
+df["col"][row_indexer] = value
+
+Use `df.loc[row_indexer, "col"] = values` instead, to perform the assignment in a single step and ensure this keeps updating the original `df`.
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+[FAIL] 國家認證2: cell4: AttributeError: module 'talib.abstract' has no attribute 'rsi'
+
+>>> 小市值.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+[OK] 小市值: small_cap.html (2493525 bytes) title='小市值'
+
+>>> 快射了.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[FAIL] 快射了: no report object produced
+
+>>> 暴力營收.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] 暴力營收: aggressive_revenue.html (2428846 bytes) title='暴力營收'
+
+>>> 營收股價雙渦輪.ipynb
+營收股價雙渦輪.ipynb:cell1:61: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+營收股價雙渦輪.ipynb:cell1:82: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+營收股價雙渦輪.ipynb:cell1:83: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+Fetched 7 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+  cached  etl:adj_open
+<IPython.core.display.HTML object>
+[OK] 營收股價雙渦輪: revenue_price_turbo.html (2443909 bytes) title='營收股價雙渦輪'
+
+>>> 超級績效.ipynb
+Fetched 7 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:adj_open
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+<IPython.core.display.HTML object>
+[OK] 超級績效: super_performance.html (2439357 bytes) title='超級績效'
+
+>>> 集保_1.ipynb
+Fetched 6 datasets in 0.4s
+  cached  benchmark_return:發行量加權股價…
+  cached  etl:is_flagged_stock
+  cached  etl:market_value
+  cached  price:成交股數
+  cached  security_categories
+  cached  etl:adj_close
+[OK] 集保_1: jibao_1.html (2359121 bytes) title='集保_1'
+
+DONE fail=4/17 out=/home/work/finlab/backtest_reports
