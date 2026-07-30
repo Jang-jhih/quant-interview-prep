@@ -24,7 +24,7 @@ flowchart TD
     subgraph ENTRY["策略入口 (Notebook)"]
         direction TB
         C1["匯入 GA 套件與 finlab 回測引擎"]
-        C2["定義持倉函式 get_position<br/>(YoY 加權 + 流動性篩選)"]
+        C2["定義持倉函式 get_position<br/>"]
         C3["組裝 config:<br/>・GA 演化參數<br/>・績效指標權重<br/>・條件清單來源<br/>・驗證模式"]
     end
 

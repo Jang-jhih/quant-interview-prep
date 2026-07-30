@@ -1,7 +1,5 @@
 # quant-interview-prep
 
-> 量化交易研究平台作品集與面試準備文件。
->
 > **核心敘事**：以嚴格審計的金融資料倉儲為基礎，結合 AI（LLM、遺傳演算法、Agent Runtime）與人類研究員協作，自動化產生選股池、因子、風險訊號，並透過服務層對外暴露。
 
 ---
@@ -10,41 +8,37 @@
 
 整套系統圍繞三個相互支撐的理念：
 
-### 1. 資料倉儲 = 唯一真相源（Single Source of Truth）
+### 1. 資料倉儲 
 
 **所有研究、回測、風險評估的資料一律從倉儲 parquet 讀取**——這是平台的核心。
 
 - 嚴格審計：Watermark（水位線）+ Gap Calculator（缺口計算）+ 多源交叉校驗 + Discord 告警
-- 禁止繞過倉儲：不能直連 FinLab API、不能讀私有 pickle cache、不能在腳本同層自建 dataset
-- 為什麼嚴格？因為「**錯的資料比沒資料更可怕**」——缺一筆法人買超不會拋例外，但會讓下游籌碼因子分析得出錯誤結論，且這種錯誤**不會拋例外**，只會靜默讓回測看起來很漂亮，直到實盤爆炸
 
 ### 2. AI 協作而非 AI 替代（Human-in-the-loop）
 
 AI 工具不是用來替代研究員，而是把研究員從繁重產生工作中解放，專注於架構與判讀：
 
-| AI 角色 | 工作內容 | 人類研究員的角色 |
-|---|---|---|
-| **LLM（OpenEvolve）** | 用 Diff-based 演算法自動產生因子程式碼 | 審查因子、調整 prompt、設定評分門檻 |
-| **遺傳演算法（DEAP）** | 在巨量條件組合中搜尋最佳選股策略 | 設計條件池、選擇績效指標、判讀結果 |
-| **Agent Runtime（Hermes）** | 風險分析、資料查詢、報告生成 | 設定 profile、審查輸出、做最終決策 |
-| **LLM（Claude/GPT）** | 程式碼審查、bug 追蹤、文件撰寫 | 架構決策、方法論選擇、結果驗證 |
+| AI 角色                          | 工作內容                      | 人類研究員的角色              |
+| ------------------------------ | ------------------------- | --------------------- |
+| **LLM（OpenEvolve）**            | 用 Diff-based 演算法自動產生因子程式碼 | 審查因子、調整 prompt、設定評分門檻 |
+| **遺傳演算法（DEAP or Openevolve等）** | 在巨量條件組合中搜尋最佳選股策略          | 設計條件池、選擇績效指標、判讀結果     |
+| **Agent Runtime（Hermes）**      | 風險分析、資料查詢、報告生成            | 設定 profile、審查輸出、做最終決策 |
+| **LLM（Claude/GPT）**            | 程式碼審查、bug 追蹤、文件撰寫         | 架構決策、方法論選擇、結果驗證       |
 
-關鍵：**AI 寫的程式碼一定要人審，不能盲信**。我搭了一套 AI 審查 pipeline（多 subagents 平行：bug review / 標準審查 / 架構審查），未通過不合併。
 
-### 3. 實作 / 暴露 雙層分工
+### 3. 研究階段 / 發展階段 
 
 ```
-能力實作層                能力暴露層
-(需要領域知識的決策)       (對外提供機制)
+研究專案                  發展階段
+(不同的議題研究專案)        (繼續自動化研究或者放入儀表板觀察)
 ┌──────────────┐         ┌──────────────────┐
 │ research     │         │ Hermes (Agent)   │
-│ market-risk  │  ───→   │ n8n (自動化)     │
+│ market-risk  │  ───→   │ n8n (自動化)      │
 │ evolution-lab│         │ data-api (REST)  │
 │ datawarehouse│         │ plutus_ui (UI)   │
 └──────────────┘         └──────────────────┘
 ```
 
-判準：「需要領域知識才能回答的決策」（Sharpe 門檻、因子篩選、研究方向）屬實作層；「把該決策對外暴露的機制」屬暴露層。分開後，研究端改策略不用動 UI，UI 改 layout 不用碰回測邏輯。
 
 ---
 
@@ -63,13 +57,13 @@ flowchart TB
     subgraph AI["AI 協作引擎"]
         direction LR
         LLM["LLM<br/>(Diff-based Evolution)"]:::ai
-        GA["GA<br/>(DEAP 演化)"]:::ai
+        GA["GA<br/>(DEAP or openevolve等 演化)"]:::ai
         HERMES["Agent Runtime<br/>(Hermes 5 profile)"]:::ai
     end
 
     subgraph RS["研究支柱 (實作層)"]
         direction LR
-        UNI["Universe Selection<br/>GA 選股條件搜尋<br/>+ YoY 加權"]:::research
+        UNI["Universe Selection<br/>GA 選股條件搜尋<br/>"]:::research
         GEN["Generation<br/>LLM 因子 + GA 策略<br/>三軌演化"]:::research
         RISK["Market Risk<br/>事件型風險研究<br/>兩層四 Pack"]:::research
     end
@@ -234,10 +228,10 @@ quant-interview-prep/
 4. 任選 1 份 Pack C 子題深探：
    - [`flowcharts/market_risk_studies/fingpt_risk.md`](./flowcharts/market_risk_studies/fingpt_risk.md)（LLM + 12 年輿情 + 雙 pivot 誠實故事）
    - [`flowcharts/market_risk_studies/industry_rotation_risk.md`](./flowcharts/market_risk_studies/industry_rotation_risk.md)（12 輪 autoresearch 紀律 + circular trap 揭露）
-5. [`flowcharts/INTERVIEW_BRIEFING.md`](./flowcharts/INTERVIEW_BRIEFING.md)「預期問題」章節
+5. [`flowcharts/INTERVIEW_BRIEFING.md`](_INTERVIEW_BRIEFING.md)「預期問題」章節
 
 ### 🎯 給求職者自己（面試前準備）
-1. [`flowcharts/INTERVIEW_BRIEFING.md`](./flowcharts/INTERVIEW_BRIEFING.md) —— 口語稿，反覆練 30 秒電梯簡報（現在共 7 章：5 主題 + 2 Pack C 子題）
+1. [`flowcharts/INTERVIEW_BRIEFING.md`](_INTERVIEW_BRIEFING.md) —— 口語稿，反覆練 30 秒電梯簡報（現在共 7 章：5 主題 + 2 Pack C 子題）
 2. [`flowcharts/SOURCE_MANIFEST.md`](./flowcharts/SOURCE_MANIFEST.md) —— 確保每個細節都能追溯到程式碼
 3. 7 份 flowchart 各跑一次 IDE Mermaid 預覽，確認渲染正常
 4. 找人模擬面試，特別練習「地雷題」（每份 briefing 末尾都有列）

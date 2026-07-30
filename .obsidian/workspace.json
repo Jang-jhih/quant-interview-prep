@@ -1,0 +1,207 @@
+{
+  "main": {
+    "id": "c1788372db319b77",
+    "type": "split",
+    "children": [
+      {
+        "id": "04d5c0dc57d83879",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "33ec5340b3302195",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "flowcharts/evolution_lab.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "evolution_lab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "681db668e429893d",
+    "type": "split",
+    "children": [
+      {
+        "id": "c9fdac0c930bc403",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e99b1434e8e79c14",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "檔案瀏覽器"
+            }
+          },
+          {
+            "id": "1b9971fc25d629d0",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜尋"
+            }
+          },
+          {
+            "id": "ac09e1dbe0dc4d0d",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "書籤"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "60c1e89f25f3a80d",
+    "type": "split",
+    "children": [
+      {
+        "id": "3a390988680357a1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a76955d25d10dd8e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "flowcharts/evolution_lab.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "evolution_lab 的反向連結"
+            }
+          },
+          {
+            "id": "943a855853dd1a38",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "flowcharts/evolution_lab.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "evolution_lab 的對外連結"
+            }
+          },
+          {
+            "id": "eea32bdcb2454043",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "標籤"
+            }
+          },
+          {
+            "id": "1d18bca68b2325a2",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "所有屬性"
+            }
+          },
+          {
+            "id": "0e858893f2d6ccf3",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "flowcharts/evolution_lab.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "evolution_lab 的大綱"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "bases:建立新的 base": false
+    }
+  },
+  "active": "33ec5340b3302195",
+  "lastOpenFiles": [
+    "flowcharts/datawarehouse.md",
+    "flowcharts/_INTERVIEW_BRIEFING.md",
+    "flowcharts/example_universe_selection.md",
+    "flowcharts/evolution_lab.md",
+    "flowcharts/market_risk_studies/fingpt_risk.md",
+    "backtest_reports/README.md",
+    "README.md",
+    "flowcharts/market_risk_studies/industry_rotation_risk.md",
+    "flowcharts/market_risk_studies",
+    "backtest_reports/super_performance.html",
+    "backtest_reports/super8888.html",
+    "backtest_reports/super888.html",
+    "backtest_reports/super8.html",
+    "backtest_reports/strong_breakout.html",
+    "backtest_reports/small_cap.html",
+    "backtest_reports/s_yoy_v5.html",
+    "backtest_reports/s_yoy_v2_v1.html",
+    "backtest_reports/revenue_price_turbo.html"
+  ]
+}

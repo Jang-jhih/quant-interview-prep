@@ -241,13 +241,6 @@ flowchart LR
     class FINMIND,ALIGN baseline;
 ```
 
-### 資料邊界規則（專案鐵律）
-
-| 資料型別 | 資料源 | 規則 |
-|---|---|---|
-| 選股池篩選、寬表因子 | **FinLab** | `price:收盤價`、`monthly_revenue:...` 等 |
-| 國際市場、總經、大盤指數 | **DataWarehouse (FinMind)** | 期貨、選擇權、外資買賣超等 |
-
 ---
 
 ## 五、統一結果層（ResultsStore + Promote）
@@ -337,53 +330,4 @@ flowchart LR
 
 ---
 
-## 八、如何在 IDE 完整呈現 Mermaid 流程圖
 
-這份文件中的所有流程圖使用 **Mermaid 語法**，已內嵌「淺底深字」主題變數，**相容於亮／暗 IDE 主題**，不需另外調整配色。要在 IDE 看到渲染結果，依使用的 IDE 安裝對應套件：
-
-### VS Code / Cursor（最推薦）
-
-在延伸模組市集搜尋並安裝**任一**即可：
-
-| 套件 | Publisher | 說明 |
-|---|---|---|
-| **Markdown Preview Mermaid Support** | *Matt Biilmann* | 最主流、最穩定，安裝後直接用 `Ctrl+Shift+V` 預覽 Markdown 就會渲染 |
-| **Markdown Mermaid** | *Brian Koh* | 整合更完整，支援匯出 PNG/SVG |
-| **Mermaid Markdown Syntax Highlighting** | *NETRON* | 額外提供語法高亮（可與上面任一搭配） |
-
-**操作**：打開 `.md` 檔 → `Ctrl+Shift+V`（Mac: `Cmd+Shift+V`）開啟預覽 → 流程圖會自動渲染。
-
-> 若想所見即所得（邊打字邊渲染）：安裝上面任一擴充後，再加裝 **Markdown All in One**（*yzhang*）。
-
-### JetBrains 家族（PyCharm / IntelliJ / DataGrip）
-
-**新版 (2023.1 之後) 內建支援**，無需額外安裝：
-
-1. `Settings` → `Languages & Frameworks` → `Markdown`
-2. 勾選 **"Render Mermaid diagrams in preview"**
-3. 開啟 Markdown 檔後，右上角切換到 **Preview** 或 **Split** 模式即可
-
-**舊版** 需在 Plugins 市集搜尋 *Markdown* plugin 並升級至內建版本。
-
-### GitHub / GitLab
-
-**原生支援**，把 `.md` push 上去後直接在網頁上看到渲染結果，**不需安裝任何套件**。
-
-### Obsidian / Notion / HackMD
-
-**原生支援**，把整份內容貼進去即會渲染。適合用來當面試時的展示媒介。
-
-### 瀏覽器直接看（免安裝）
-
-把整份 `.md` 內容貼到以下任一線上工具即可：
-- **Mermaid Live Editor**：https://mermaid.live
-- **GitHub Gist**：貼成 `.md` gist 直接渲染
-
----
-
-## 九、附錄：Mermaid 渲染驗證
-
-如果你的 IDE 流程圖顯示空白或出現語法錯誤，先做這兩件事：
-
-1. **確認副檔名為 `.md`**（不是 `.txt`、`.markdown`）
-2. **貼到 [mermaid.live](https://mermaid.live) 驗證語法**：能渲染就代表 IDE 端問題；不能渲染代表語法錯（這份文件已通過驗證）。

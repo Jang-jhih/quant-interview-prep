@@ -8,16 +8,13 @@
 
 ## 一、模組定位
 
-| 項目 | 內容 |
-|---|---|
-| **研究問題** | 把 FinGPT 輿情情緒分數轉成 [0, 1] 的「恐慌百分位」，描述當下市場恐慌環境 |
-| **議題角色** | **overlay**（環境描述，非主策略訊號），禁止宣稱 P(up) / P(down) |
-| **資料資產** | `/data_g/warehouse/fingpt_stock_sentiment/_market/` — **12 年** parquet（2015 ~ 2026-07-09，~2900 檔股票，~290 萬筆）|
-| **生產指標** | `panic_index_rank`（expanding window 分位數版本，`min_periods=60`）|
-| **驗證主軸** | Pack C auxiliary：`state_icc`（η²）／`state_spearman`（|ρ|）／`quantile_separation` |
-| **目標狀態變數** | TAIEX 20d rvol、OTC 20d rvol、TAIEX 5d MDD、OTC 5d MDD（雙市場對照）|
-| **每日排程** | n8n「FinGPT Daily Update」22:30 TST（Asia/Taipei）|
-| **入口 Notebook** | `notebooks/risk_dashboard.ipynb`（Restart + Run All ✅）|
+| 項目         | 內容                                                                                                          |     |     |
+| ---------- | ----------------------------------------------------------------------------------------------------------- | --- | --- |
+| **研究問題**   | 把 FinGPT 輿情情緒分數轉成 [0, 1] 的「恐慌百分位」，描述當下市場恐慌環境                                                                |     |     |
+| **議題角色**   | **overlay**（環境描述，非主策略訊號），禁止宣稱 P(up) / P(down)                                                               |     |     |
+| **資料資產**   | `/data_g/warehouse/fingpt_stock_sentiment/_market/` — **12 年** parquet（2015 ~ 2026-07-09，~2900 檔股票，~290 萬筆） |     |     |
+| **目標狀態變數** | TAIEX 20d rvol、OTC 20d rvol、TAIEX 5d MDD、OTC 5d MDD（雙市場對照）                                                  |     |     |
+| **每日排程**   | n8n「FinGPT Daily Update」22:30 TST（Asia/Taipei）                                                              |     |     |
 
 ---
 
