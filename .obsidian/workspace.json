@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "flowcharts/evolution_lab.md",
+                "file": "flowcharts/_INTERVIEW_BRIEFING.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "evolution_lab"
+              "title": "_INTERVIEW_BRIEFING"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "flowcharts/evolution_lab.md",
+                "file": "flowcharts/_INTERVIEW_BRIEFING.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "evolution_lab 的反向連結"
+              "title": "_INTERVIEW_BRIEFING 的反向連結"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "flowcharts/evolution_lab.md",
+                "file": "flowcharts/_INTERVIEW_BRIEFING.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "evolution_lab 的對外連結"
+              "title": "_INTERVIEW_BRIEFING 的對外連結"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "flowcharts/evolution_lab.md",
+                "file": "flowcharts/_INTERVIEW_BRIEFING.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "evolution_lab 的大綱"
+              "title": "_INTERVIEW_BRIEFING 的大綱"
             }
           }
         ]
@@ -185,13 +185,19 @@
   },
   "active": "33ec5340b3302195",
   "lastOpenFiles": [
+    "flowcharts/evolution_lab.md",
+    "README.md",
+    "flowcharts/SOURCE_MANIFEST.md",
+    "flowcharts/universe_selection_deep_GA.md",
     "flowcharts/datawarehouse.md",
     "flowcharts/_INTERVIEW_BRIEFING.md",
-    "flowcharts/example_universe_selection.md",
-    "flowcharts/evolution_lab.md",
-    "flowcharts/market_risk_studies/fingpt_risk.md",
+    "flowcharts/_FACTS.md",
     "backtest_reports/README.md",
-    "README.md",
+    "scripts/check_facts.sh",
+    "scripts",
+    "flowcharts/market_risk_studies/leverage_guard_overlay.md",
+    "flowcharts/market_risk_studies/fingpt_panic_rebound.md",
+    "flowcharts/market_risk_studies/fingpt_risk.md",
     "flowcharts/market_risk_studies/industry_rotation_risk.md",
     "flowcharts/market_risk_studies",
     "backtest_reports/super_performance.html",
@@ -200,8 +206,6 @@
     "backtest_reports/super8.html",
     "backtest_reports/strong_breakout.html",
     "backtest_reports/small_cap.html",
-    "backtest_reports/s_yoy_v5.html",
-    "backtest_reports/s_yoy_v2_v1.html",
-    "backtest_reports/revenue_price_turbo.html"
+    "backtest_reports/s_yoy_v5.html"
   ]
 }

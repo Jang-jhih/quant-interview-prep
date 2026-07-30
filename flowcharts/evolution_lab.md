@@ -363,66 +363,14 @@ flowchart LR
 
 ## 七、技術棧
 
-| 領域 | 套件 |
-|---|---|
-| LLM 演化框架 | **OpenEvolve**（MAP-Elites + Diff-based + Side-Channel） |
-| LLM Provider | **MiniMax-M3**（`api.minimax.io/v1`，OpenAI 相容 client） |
-| 台股量化回測 | **FinLab** (`data.get`、`sim` 回測引擎) |
-| 總經與衍生品資料 | **FinMind** / DataWarehouse (Parquet) |
-| 資料處理 | `pandas`, `numpy`, `pyarrow` |
-| 結果儲存 | **SQLite** (staging) + **Supabase** (production) |
-| 配置 | `YAML` (catalogs + factors_config + modes) |
-| 視覺化瀏覽 | **Next.js**（`plutus_ui/web/` 的 `/evolution` 路由，唯讀）|
-| 過擬合檢測 | **DSR** (Deflated Sharpe Ratio) + IC stability |
-
----
-
-## 八、如何在 IDE 完整呈現 Mermaid 流程圖
-
-這份文件中的所有流程圖使用 **Mermaid 語法**，已內嵌「淺底深字」主題變數，**相容於亮／暗 IDE 主題**。
-
-### VS Code / Cursor（最推薦）
-
-在延伸模組市集搜尋並安裝**任一**即可：
-
-| 套件 | Publisher | 說明 |
-|---|---|---|
-| **Markdown Preview Mermaid Support** | *Matt Biilmann*（`bierner.markdown-mermaid`） | 最主流、最穩定，安裝後直接用 `Ctrl+Shift+V` 預覽 Markdown 就會渲染 |
-| **Markdown Mermaid** | *Brian Koh* | 整合更完整，支援匯出 PNG/SVG |
-| **Mermaid Markdown Syntax Highlighting** | *NETRON* | 額外提供語法高亮（可與上面任一搭配） |
-
-**操作**：打開 `.md` 檔 → `Ctrl+Shift+V`（Mac: `Cmd+Shift+V`）開啟預覽 → 流程圖會自動渲染。
-
-### JetBrains 家族（PyCharm / IntelliJ / DataGrip）
-
-**新版 (2023.1 之後) 內建支援**，無需額外安裝：
-
-1. `Settings` → `Languages & Frameworks` → `Markdown`
-2. 勾選 **"Render Mermaid diagrams in preview"**
-3. 開啟 Markdown 檔後，右上角切換到 **Preview** 或 **Split** 模式即可
-
-### GitHub / GitLab
-
-**原生支援**，把 `.md` push 上去後直接在網頁上看到渲染結果，**不需安裝任何套件**。
-
-### Obsidian / Notion / HackMD
-
-**原生支援**，把整份內容貼進去即會渲染。適合用來當面試時的展示媒介。
-
-### 瀏覽器直接看（免安裝）
-
-- **Mermaid Live Editor**：https://mermaid.live
-- **GitHub Gist**：貼成 `.md` gist 直接渲染
-
----
-
-## 九、附錄：Mermaid 渲染驗證
-
-如果流程圖顯示空白或出現語法錯誤，先做這兩件事：
-
-1. **確認副檔名為 `.md`**（不是 `.txt`、`.markdown`）
-2. **貼到 [mermaid.live](https://mermaid.live) 驗證語法**：能渲染就代表 IDE 端問題；不能渲染代表語法錯
-
-> 本 repo 附有 `scripts/check_facts.sh`，會掃描所有 Mermaid 區塊的
-> `class` / `:::` 是否引用到未定義的節點或 classDef——推上去之前先跑一次。
+| 領域           | 套件                                                     |
+| ------------ | ------------------------------------------------------ |
+| LLM 演化框架     | **OpenEvolve**（MAP-Elites + Diff-based + Side-Channel） |
+| LLM Provider | **MiniMax-M3**（`api.minimax.io/v1`，OpenAI 相容 client）   |
+| 台股量化回測       | **FinLab** (`data.get`、`sim` 回測引擎)                     |
+| 總經與衍生品資料     | **FinMind** / DataWarehouse (Parquet)                  |
+| 結果儲存         | **SQLite** (staging) + **Supabase** (production)       |
+| 配置           | `YAML` (catalogs + factors_config + modes)             |
+| 視覺化瀏覽        | **Next.js**（`plutus_ui/web/` 的 `/evolution` 路由，唯讀）     |
+| 過擬合檢測        | **DSR** (Deflated Sharpe Ratio) + IC stability         |
 

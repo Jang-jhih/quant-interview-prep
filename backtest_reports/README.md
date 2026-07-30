@@ -190,4 +190,4 @@ https://htmlpreview.github.io/?https://raw.githubusercontent.com/Jang-jhih/quant
 | 用途 | 展示回測工具鏈熟練度與策略直覺 | 展示研究方法論 |
 
 > 策略搜尋的自動化版本見
-> [`flowcharts/example_universe_selection.md`](../flowcharts/example_universe_selection.md)（GA 演化選股）。
+> [`flowcharts/example_universe_selection.md`](universe_selection_deep_GA.md)（GA 演化選股）。

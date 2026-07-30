@@ -234,25 +234,7 @@ flowchart TD
 | **Dedup Key 鐵律** | `全部非 float64 欄 + strike_price`（曾因只用 `(id, date)` 靜默損毀 99% 籌碼資料） |
 | **配額安全鐵律** | 見下方——**慢補是常態，不是要修的效能問題** |
 
-### 配額安全鐵律（生產紀律，比架構圖更值得講）
 
-寫成規則檔 `.claude/rules/finmind-throughput-safety.md`，內容是一條禁令：
-
-> **絕不可為了加速補 backlog 而調高 `--max-workers` / `--rate-limit` 去佔滿配額**——
-> 持續飽和會觸發停權 / IP ban。**finmind 慢補是常態，不是要修的效能問題。**
-
-為什麼這條要寫死成規則而不是靠自覺：backlog 積壓時「加大並行」是最直覺的動作，
-而懲罰（IP ban）延遲發生、且會**同時打掉所有資料源的當日更新**。所以：
-
-| 機制 | 內容 |
-|---|---|
-| `IP_BAN_COOLDOWN_SECONDS = 2100` | 35 分鐘（FinMind ban 30 分 + 5 分緩衝），寫死在 `constants.py` |
-| **每源獨立 worker 數與限速** | `finmind` 4 workers / 20,000 req-hr；`krx` 只給 2 workers（Naver 軟限流 ~2 req/s）|
-| **ADR-012 進程生命週期** | supervisord 持有 `worker-{finmind,binance,yfinance,macro}`，`--daemon --max-runtime 86400` + autorestart |
-| **n8n 只負責 enqueue** | `POST /api/warehouse/update?source=X` 是 **enqueue-only**——排程器不直接下載，避免排程重疊變成並行放大 |
-| **吞吐量測方法** | 用 ≥60–90 秒穩態窗口兩點取樣，不用單次短快照（否則會誤判吞吐而想「優化」）|
-
-> 面試可以這樣收尾：「這條規則的價值不在技術，在於**它把一個延遲懲罰的錯誤變成當下就過不了的規則**。」
 
 ---
 
@@ -432,66 +414,3 @@ KRX（韓國交易所）的完整資料要會員資格，但量化研究需要�
 > 且限速壓到 2 workers / 1800 req-hr 比對方的軟限流更保守。**
 
 ---
-
-## 五、技術棧
-
-| 領域 | 套件 / 服務 |
-|---|---|
-| 資料源 API | FinMind (Sponsor Pro) / FinLab / yfinance / Binance / FRED / EIA / CFTC / US Congress / CNN F&G / Pykrx + FinanceDataReader + Naver Finance / J-Quants（已暫停）|
-| 列式儲存 | **Apache Parquet** (via PyArrow) |
-| SQL 引擎 | **DuckDB** (查詢 Parquet) |
-| 任務佇列 | **Redis ZSET** (時間排序) |
-| 中介資料 | SQLite (watermark / metadata / data_catalog) |
-| 並發控制 | `asyncio` + 自建 Lock Manager + Rate Limiter |
-| 監控通知 | Discord Webhook |
-| 容器化 | Docker Compose |
-| 程式語言 | Python 3.11+ |
-
----
-
-## 六、如何在 IDE 完整呈現 Mermaid 流程圖
-
-這份文件中的所有流程圖使用 **Mermaid 語法**，已內嵌「淺底深字」主題變數，**相容於亮／暗 IDE 主題**。要在 IDE 看到渲染結果，依使用的 IDE 安裝對應套件：
-
-### VS Code / Cursor（最推薦）
-
-在延伸模組市集搜尋並安裝**任一**即可：
-
-| 套件 | Publisher | 說明 |
-|---|---|---|
-| **Markdown Preview Mermaid Support** | *Matt Biilmann* | 最主流、最穩定，安裝後直接用 `Ctrl+Shift+V` 預覽 Markdown 就會渲染 |
-| **Markdown Mermaid** | *Brian Koh* | 整合更完整，支援匯出 PNG/SVG |
-| **Mermaid Markdown Syntax Highlighting** | *NETRON* | 額外提供語法高亮（可與上面任一搭配） |
-
-**操作**：打開 `.md` 檔 → `Ctrl+Shift+V`（Mac: `Cmd+Shift+V`）開啟預覽 → 流程圖會自動渲染。
-
-### JetBrains 家族（PyCharm / IntelliJ / DataGrip）
-
-**新版 (2023.1 之後) 內建支援**，無需額外安裝：
-
-1. `Settings` → `Languages & Frameworks` → `Markdown`
-2. 勾選 **"Render Mermaid diagrams in preview"**
-3. 開啟 Markdown 檔後，右上角切換到 **Preview** 或 **Split** 模式即可
-
-### GitHub / GitLab
-
-**原生支援**，把 `.md` push 上去後直接在網頁上看到渲染結果，**不需安裝任何套件**。
-
-### Obsidian / Notion / HackMD
-
-**原生支援**，把整份內容貼進去即會渲染。適合用來當面試時的展示媒介。
-
-### 瀏覽器直接看（免安裝）
-
-把整份 `.md` 內容貼到以下任一線上工具即可：
-- **Mermaid Live Editor**：https://mermaid.live
-- **GitHub Gist**：貼成 `.md` gist 直接渲染
-
----
-
-## 七、附錄：Mermaid 渲染驗證
-
-如果你的 IDE 流程圖顯示空白或出現語法錯誤，先做這兩件事：
-
-1. **確認副檔名為 `.md`**（不是 `.txt`、`.markdown`）
-2. **貼到 [mermaid.live](https://mermaid.live) 驗證語法**：能渲染就代表 IDE 端問題；不能渲染代表語法錯（這份文件已通過驗證）。
