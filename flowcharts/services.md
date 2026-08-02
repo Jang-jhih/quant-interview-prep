@@ -369,7 +369,14 @@ flowchart LR
     class CLIENT finlab;
 ```
 
-### 口徑說明
+### 快照匯出管線 (Snapshot Pipeline) 與口徑說明
+
+在 UI 展示（如 ETF 績效或策略追蹤）上，系統嚴格遵循「實作與暴露分離」：
+1. **即時運算**：由 `data-api` 負責。
+2. **定時快照**：透過 **n8n 排程** (如 `Daily ETF Backtest Export`)，每日呼叫 API 算好回測，並匯出成靜態 JSON 存回 Data Warehouse (`ui/etf/`)。
+3. **前端讀取**：Web UI 只透過 `etf_snapshots` 這種 reader 讀取靜態結果，不觸發高耗時回測。
+
+> **未來擴展**：此架構已足夠穩定，未來 FinLab 量化選股策略也可直接掛上這套 Snapshot Pipeline，與 ETF 在同一 UI 共同追蹤。
 
 實際對外的 REST router 共 **9 個**（health / dw / research / evolution / risk /
 commentary / active-etf / passive-etf / breadth），底下接 **5 個唯讀 reader**。

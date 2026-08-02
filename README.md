@@ -3,21 +3,35 @@
 > 以嚴格審計的資料倉儲為底，用 AI（LLM、遺傳演算法、Agent）協助研究，
 > 產出選股池、因子與風險訊號，再透過服務層對外暴露。
 
+## ⚡ 電梯簡報（30 秒版）
+
+**當前研究重心**：指數風險預警與 ETF 交易系統。底層是一套具備統計嚴謹度的風險研究管線，以事件研究法建模崩盤事件，並透過 Snapshot Pipeline 驅動 Web UI 即時展示。
+
+| 亮點 | 數據 |
+|---|---|
+| 🛡️ 唯一通過 IS + OOS 雙驗證的市場風險訊號 | 4 段 walk-forward + 4 次危機事件全通過 |
+| 📉 槓桿守門 Overlay 控制最大回撤 | MDD −56.3% → −12.1%（代價：同期少賺一半） |
+| 🤖 LLM + GA 雙引擎因子演化（研究層） | Diff-based 修改保可執行，MAP-Elites 確保策略多樣性 |
+| 🏗️ 8 個資料源、6 個限速群組 | 水位線 + 缺口計算 + Discord 告警確保資料品質 |
+
+> [!IMPORTANT]
+> **對招募者的一句話**：這個專案不只會「跑回測」，它展示了我如何設計一個具備防假陽性統計守門機制、實作與暴露層嚴格分離的生產級量化研究基礎設施。
+
 ---
 
 ## 0. 一頁式導覽
 
 | # | 主題 | 簡述 |
 |---|---|---|
-| 5 | [事件型市場風險平台](./flowcharts/market_risk.md) | 不用 VaR/GARCH，用事件研究法直接建模崩盤事件 |
-| 5.4 | [槓桿守門 Overlay](./flowcharts/market_risk_studies/leverage_guard_overlay.md) | 訊號 → 逐日曝險倍數，量化「保險的保費」 |
-| 5.1 | [FinGPT 恐慌指數](./flowcharts/market_risk_studies/fingpt_risk.md) | 12 年輿情推論 → 恐慌百分位環境描述器 |
-| 5.3 | [恐慌抄底訊號](./flowcharts/market_risk_studies/fingpt_panic_rebound.md) | 恐慌 + 技術超跌 → 5 日反彈機率顯著提升 |
-| 5.2 | [產業輪動風險](./flowcharts/market_risk_studies/industry_rotation_risk.md) | 集團輪動強度 + 主線強度 → 1-5 風險分數 |
-| 2 | [LLM 因子演化實驗室](./flowcharts/evolution_lab.md) | 讓 LLM 用 SEARCH/REPLACE diff 自動改寫因子程式碼 |
-| 1 | [GA 選股策略](./flowcharts/universe_selection_deep_GA.md) | 用遺傳演算法搜尋「4~8 個選股條件 AND 組合」的最佳解 |
+| 1 | [事件型市場風險平台](./flowcharts/market_risk.md) | 不用 VaR/GARCH，用事件研究法直接建模崩盤事件 |
+| 1.1 | [槓桿守門 Overlay](./flowcharts/market_risk_studies/leverage_guard_overlay.md) | 訊號 → 逐日曝險倍數，量化「保險的保費」 |
+| 1.2 | [FinGPT 恐慌指數](./flowcharts/market_risk_studies/fingpt_risk.md) | 12 年輿情推論 → 恐慌百分位環境描述器 |
+| 1.3 | [恐慌反彈訊號](./flowcharts/market_risk_studies/fingpt_panic_rebound.md) | 恐慌 + 技術超跌 → 5 日反彈機率顯著提升 |
+| 1.4 | [產業輪動風險](./flowcharts/market_risk_studies/industry_rotation_risk.md) | 集團輪動強度 + 主線強度 → 1-5 風險分數 |
+| 2 | [LLM 因子演化實驗室](GA_evolution_lab.md) | 讓 LLM 用 SEARCH/REPLACE diff 自動改寫因子程式碼 |
+| 3 | [GA 選股策略](GA_universe_selection_deep_GA.md) | 用遺傳演算法搜尋「4~8 個選股條件 AND 組合」的最佳解 |
 | 4 | [AI 服務編排層](./flowcharts/services.md) | 把研究能力包成 Agent / 自動化 / REST / Web 四種對外形態 |
-| 3 | [多源資料倉儲](./flowcharts/datawarehouse.md) | 8 個資料源、水位線 + 缺口計算 + 每日審計的 Parquet 倉儲 |
+| 5 | [多源資料倉儲](./flowcharts/datawarehouse.md) | 8 個資料源、水位線 + 缺口計算 + 每日審計的 Parquet 倉儲 |
 | 6 | [策略回測報告](./backtest_reports/) | 17 份 FinLab 全期回測範例，研究層候選篩選 |
 
 ---
@@ -47,18 +61,23 @@
 
 → 對應研究：[槓桿守門 Overlay](./flowcharts/market_risk_studies/leverage_guard_overlay.md)
 
-### 3. 底部訊號 —— 進場時機
+### 3. 反彈機率訊號 —— 進場參考
 
-反彈之前，**全市場波動會進入極值**。歷史回測勝率約八成，
-但 2008 年仍承受 34% 跌幅——所以除了分批進場之外，這個指標**仍需要優化**。
+反彈之前，**全市場波動會進入極值**。歷史回測 5 日反彈機率顯著提升，
+但**無法預測底部位置**——此訊號只能說明「反彈機率提高」，不能宣稱「這就是底」。
+2008 年仍承受 34% 跌幅，須搭配分批進場與嚴格停損。
 
-→ 對應研究：[恐慌抄底訊號](./flowcharts/market_risk_studies/fingpt_panic_rebound.md)
+→ 對應研究：[恐慌反彈訊號](./flowcharts/market_risk_studies/fingpt_panic_rebound.md)
 
-### 標的選擇：改用 ETF
+### 標的選擇與快照匯出 (ETF & 策略追蹤)
 
-2025 年底起市場波動放大、節奏變快、股價偏高，過往交易程式的節奏較慢、點位不易掌握，
-對我而言交易難度升高。因此改用 **ETF** 降低波動；主動式 ETF 上市後，
-還能借用經理人的選股能力，且低股價、進出容易。**整套系統完善後可能再換回交易程式。**
+2025 年底起因市場波動放大，主要交易標的暫時改為 **ETF** 降低波動。
+為了在 Web UI 展示 ETF 的回測績效，系統實作了一套**靜態快照管線 (Snapshot Pipeline)**：
+- **排程運算**：由 n8n 建立 `Daily ETF Backtest Export` 每日排程（22:15），呼叫後端 API 計算主動與被動 ETF 的回測數據。
+- **匯出靜態檔**：將結果匯出為 JSON 快照（Slim Snapshot）存回 Data Warehouse。
+- **前端讀取**：Web UI 僅透過唯讀 Reader 讀取靜態快照，不觸發即時回測，落實「實作與暴露分離」，保護後端算力並確保回應極快。
+
+> **擴充性 (Scalability)**：這套快照管線架構已足夠穩定。未來 **FinLab 產出的量化選股策略**，也能無縫掛上這套管線，與 ETF 共同在 Web UI 上被追蹤與使用。
 
 ---
 
@@ -171,7 +190,7 @@ flowchart TB
 |---|---|---|
 | **D** | [槓桿守門 Overlay](./flowcharts/market_risk_studies/leverage_guard_overlay.md) | **CONDITIONAL**：最大回撤 −56.3% → −12.1%，但同期少賺一半 |
 | **C** | [FinGPT 恐慌指數](./flowcharts/market_risk_studies/fingpt_risk.md) | 降格為 overlay；含兩次主動修正的紀錄 |
-| **B** | [恐慌抄底訊號](./flowcharts/market_risk_studies/fingpt_panic_rebound.md) | ✅ **唯一 IS + OOS 雙 KEEP**，4 段 walk-forward 與 4 次危機事件皆通過 |
+| **B** | [恐慌反彈訊號](./flowcharts/market_risk_studies/fingpt_panic_rebound.md) | ✅ **唯一 IS + OOS 雙 KEEP**，4 段 walk-forward 與 4 次危機事件皆通過 |
 | **C** | [產業輪動風險](./flowcharts/market_risk_studies/industry_rotation_risk.md) | v1 鎖定；12 輪迭代只有 baseline 過關 |
 
 ---
@@ -196,7 +215,7 @@ flowchart TB
 **保多樣性**：MAP-Elites 把候選用「特徵 × 品質」雙維度分箱，每格只留最佳，
 確保搜尋覆蓋整個特徵空間而不是收斂到單一點。
 
-📄 [LLM 因子演化實驗室](./flowcharts/evolution_lab.md)
+📄 [LLM 因子演化實驗室](GA_evolution_lab.md)
 
 ---
 
@@ -213,7 +232,7 @@ flowchart TB
 - **PBO 機率懲罰** — 跟隨機策略對賭，沒顯著贏的個體扣分
 - **YoY 加權** — 避免只看技術面，讓部位連動基本面
 
-📄 [GA 選股策略](./flowcharts/universe_selection_deep_GA.md)
+📄 [GA 選股策略](GA_universe_selection_deep_GA.md)
 
 ---
 
